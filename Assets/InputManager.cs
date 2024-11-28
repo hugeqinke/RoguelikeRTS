@@ -89,6 +89,10 @@ public class InputManager : MonoBehaviour
         {
             EnterSelectingState();
         }
+        else if (Mouse.current.rightButton.wasPressedThisFrame)
+        {
+            IssueOrder();
+        }
     }
 
     private void EnterBoxSelect(Vector2 startPosition)
@@ -240,6 +244,18 @@ public class InputManager : MonoBehaviour
     }
 
     // Helper functions
+    private void IssueOrder()
+    {
+        // Calculate target positions
+
+        // Update target positions
+        foreach (var unit in _selectedUnits)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            unitComponent.BasicMovement.TargetPosition = unit.transform.position;
+        }
+    }
+
     private void ClearCurrentSelection()
     {
         foreach (var unit in _selectedUnits)
