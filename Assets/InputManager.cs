@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -91,6 +94,7 @@ public class InputManager : MonoBehaviour
         }
         else if (Mouse.current.rightButton.wasPressedThisFrame)
         {
+            Debug.Log("Pressed action");
             IssueOrder();
         }
     }
@@ -132,11 +136,8 @@ public class InputManager : MonoBehaviour
         {
             // Clear currently selected units
             ClearCurrentSelection();
-
             var frustrum = CreateFrustrum();
             var playerUnits = Simulator.Entity.Fetch(new List<System.Type>() { typeof(PlayerComponent) });
-
-            var selectedUnits = new List<GameObject>();
             foreach (var unit in playerUnits)
             {
                 if (IsOnFrustrum(frustrum, unit))
@@ -148,6 +149,142 @@ public class InputManager : MonoBehaviour
             BoxRenderer.gameObject.SetActive(false);
             EnterIdleState();
         }
+    }
+
+    private void ResetKinematics(IEnumerable<GameObject> units)
+    {
+        foreach (var unit in units)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            unitComponent.Kinematic.Velocity = Vector3.zero;
+        }
+    }
+
+    private Dictionary<GameObject, Vector3> CalculateTargetPositions(Vector3 targetCenter)
+    {
+        // calculate the bounding box that contains all units
+        var minX = Mathf.Infinity;
+        var minUnitPosX = Mathf.Infinity;
+
+        var minZ = Mathf.Infinity;
+        var minUnitPosZ = Mathf.Infinity;
+
+        var maxX = -Mathf.Infinity;
+        var maxUnitPosX = -Mathf.Infinity;
+
+        var maxZ = -Mathf.Infinity;
+        var maxUnitPosZ = -Mathf.Infinity;
+
+        var rotation = Camera.main.transform.rotation;
+
+        foreach (var unit in _selectedUnits)
+        {
+            var position = rotation * unit.transform.position;
+
+            if (position.x < minX)
+            {
+                minUnitPosX = unit.transform.position.x;
+                minX = position.x;
+            }
+
+            if (position.x > maxX)
+            {
+                maxUnitPosX = unit.transform.position.x;
+                maxX = position.x;
+            }
+
+            if (position.z < minZ)
+            {
+                minUnitPosZ = unit.transform.position.z;
+                minZ = position.z;
+            }
+
+            if (position.z > maxZ)
+            {
+                maxUnitPosZ = unit.transform.position.z;
+                maxZ = position.z;
+            }
+        }
+
+        var minPoint = new Vector3(minUnitPosX, 0, minUnitPosZ);
+        var maxPoint = new Vector3(maxUnitPosX, 0, maxUnitPosZ);
+
+        var v1 = new Vector3(minPoint.x, 0, maxPoint.z);
+        var v2 = new Vector3(maxPoint.x, 0, minPoint.z);
+
+#if UNITY_EDITOR
+        Debug.DrawLine(minPoint, v1, Color.magenta, 10);
+        Debug.DrawLine(v1, maxPoint, Color.magenta, 10);
+        Debug.DrawLine(maxPoint, v2, Color.magenta, 10);
+        Debug.DrawLine(v2, minPoint, Color.magenta, 10);
+
+        Debug.Log(v1 + " " + v2 + " " + minPoint + " " + maxPoint);
+#endif
+
+
+        // Don't do full camera rotation because I want to assume that the bounding box
+        // is flat
+        var cameraRotation = Quaternion.Euler(0, Camera.main.transform.rotation.y, 0);
+        var relativeTargetCenter = targetCenter - minPoint;
+        relativeTargetCenter = cameraRotation * relativeTargetCenter;
+
+        var width = Mathf.Abs(maxPoint.x - minPoint.x);
+        var height = Mathf.Abs(maxPoint.z - minPoint.z);
+
+        if (
+            relativeTargetCenter.x <= width
+            && relativeTargetCenter.x >= 0
+            && relativeTargetCenter.z <= height
+            && relativeTargetCenter.z >= 0)
+        {
+            // Handle inner click
+            return null;
+        }
+        else
+        {
+            return CalculateOuterPosition(targetCenter, minPoint, maxPoint);
+        }
+    }
+
+    private Dictionary<GameObject, Vector3> CalculateInnerPosition(Vector3 targetCenter)
+    {
+        var unitCount = _selectedUnits.Count;
+        var columnCount = Mathf.Sqrt(unitCount);
+
+        // asssume tight positioning
+        var minUnitSize = Mathf.NegativeInfinity;
+        foreach (var unit in _selectedUnits)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            if (unitComponent.Radius < minUnitSize)
+            {
+                minUnitSize = unitComponent.Radius;
+            }
+        }
+
+        var topLeft =
+        for (int i = 0; i < columnCount; i++)
+        {
+
+        }
+    }
+
+    private Dictionary<GameObject, Vector3> CalculateOuterPosition(
+            Vector3 targetCenter,
+            Vector3 minPoint,
+            Vector3 maxPoint)
+    {
+        var center = (minPoint + maxPoint) * 0.5f;
+        var result = new Dictionary<GameObject, Vector3>();
+
+        foreach (var unit in _selectedUnits)
+        {
+            var relative = unit.transform.position - center;
+            var position = targetCenter + relative;
+            result.Add(unit, position);
+        }
+
+        return result;
     }
 
     private bool IsOnFrustrum(MathUtil.Frustrum frustrum, GameObject unit)
@@ -209,8 +346,8 @@ public class InputManager : MonoBehaviour
             FarPlane = new MathUtil.Plane(-camera.transform.forward, camera.transform.position + camera.transform.forward * camera.farClipPlane),
             RightPlane = new MathUtil.Plane(Vector3.Cross(maxDir, camera.transform.up), camera.transform.position),
             LeftPlane = new MathUtil.Plane(Vector3.Cross(camera.transform.up, minDir), camera.transform.position),
-            TopPlane = new MathUtil.Plane(Vector3.Cross(Vector3.right, maxDir), camera.transform.position),
-            BottomPlane = new MathUtil.Plane(Vector3.Cross(minDir, Vector3.right), camera.transform.position)
+            TopPlane = new MathUtil.Plane(Vector3.Cross(camera.transform.right, maxDir), camera.transform.position),
+            BottomPlane = new MathUtil.Plane(Vector3.Cross(minDir, camera.transform.right), camera.transform.position)
         };
 
         // #region DEBUG
@@ -246,13 +383,21 @@ public class InputManager : MonoBehaviour
     // Helper functions
     private void IssueOrder()
     {
-        // Calculate target positions
+        // Reset the states of all selected units
+        ResetKinematics(_selectedUnits);
 
-        // Update target positions
-        foreach (var unit in _selectedUnits)
+        var ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+        if (Physics.Raycast(ray, out RaycastHit hitInfo, 600, InputUtils.GroundLayerMask))
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
-            unitComponent.BasicMovement.TargetPosition = unit.transform.position;
+            // Calculate target positions
+            var positions = CalculateTargetPositions(hitInfo.point);
+
+            // Update target positions
+            foreach (var unit in _selectedUnits)
+            {
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+                unitComponent.BasicMovement.TargetPosition = positions[unit];
+            }
         }
     }
 
@@ -297,6 +442,8 @@ public class SelectingContext
 
 public static class InputUtils
 {
+    // WARNING: this won't reset if i didn't reset domain and
+    // I change the layer names in the Editor
     public static float MaxRaycastDistance = 100;
     public static LayerMask PlayerUnitLayerMask
     {
@@ -310,8 +457,21 @@ public static class InputUtils
             return _unitSelectionLayerMask.Value;
         }
     }
-
     private static LayerMask? _unitSelectionLayerMask;
+
+    public static LayerMask GroundLayerMask
+    {
+        get
+        {
+            if (_groundLayerMask == null)
+            {
+                _groundLayerMask = LayerMask.GetMask(Util.Layers.GroundLayer);
+            }
+
+            return _groundLayerMask.Value;
+        }
+    }
+    private static LayerMask? _groundLayerMask;
 
     public static GameObject ScanUnit(Vector3 screenPoint)
     {
@@ -356,6 +516,7 @@ public static class Util
     public static class Layers
     {
         public static string PlayerUnitLayer = "PlayerUnit";
+        public static string GroundLayer = "Ground";
     }
 
     public static class Tags

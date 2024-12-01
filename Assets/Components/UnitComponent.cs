@@ -13,6 +13,8 @@ public class UnitComponent : MonoBehaviour, IComponent
     // on the corners for larger models
     public List<SphereCollider> SelectionTriggers;
 
+    public float Radius;
+
     public Arrive Arrive;
     public Kinematic Kinematic;
     public BasicMovement BasicMovement;

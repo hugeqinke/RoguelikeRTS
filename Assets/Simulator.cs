@@ -32,7 +32,13 @@ public class Simulator : MonoBehaviour
                 unitComponent.Arrive,
                 unitComponent.BasicMovement.TargetPosition);
 
-            unitComponent.Kinematic.Velocity += steeringResult.Acceleration * Time.fixedDeltaTime;
+            if (steeringResult != null)
+            {
+                unitComponent.Kinematic.Velocity += steeringResult.Acceleration * Time.fixedDeltaTime;
+                unitComponent.Kinematic.Position += unitComponent.Kinematic.Velocity * Time.fixedDeltaTime;
+
+                unit.transform.position = unitComponent.Kinematic.Position;
+            }
         }
     }
 
@@ -42,6 +48,15 @@ public class Simulator : MonoBehaviour
         foreach (var obj in objs)
         {
             EntityFactory.RegisterItem(obj);
+        }
+
+        var units = Entity.Fetch(new List<System.Type>() { typeof(UnitComponent) });
+
+        foreach (var unit in units)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            unitComponent.Kinematic.Position = unit.transform.position;
+            unitComponent.BasicMovement.TargetPosition = unit.transform.position;
         }
     }
 
