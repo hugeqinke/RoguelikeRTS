@@ -162,74 +162,96 @@ public class InputManager : MonoBehaviour
 
     private Dictionary<GameObject, Vector3> CalculateTargetPositions(Vector3 targetCenter)
     {
-        // calculate the bounding box that contains all units
-        var minX = Mathf.Infinity;
-        var minUnitPosX = Mathf.Infinity;
+        // calculate the magic box that contains all units
+        var minPoint = new Vector2(Mathf.Infinity, Mathf.Infinity);
+        var maxPoint = new Vector2(Mathf.NegativeInfinity, Mathf.NegativeInfinity);
 
-        var minZ = Mathf.Infinity;
-        var minUnitPosZ = Mathf.Infinity;
+        var rads = -Mathf.Deg2Rad * Camera.main.transform.rotation.eulerAngles.y;
 
-        var maxX = -Mathf.Infinity;
-        var maxUnitPosX = -Mathf.Infinity;
+        var basisSpace = new float2x2(
+            Mathf.Cos(rads), -Mathf.Sin(rads),
+            Mathf.Sin(rads), Mathf.Cos(rads)
+        );
 
-        var maxZ = -Mathf.Infinity;
-        var maxUnitPosZ = -Mathf.Infinity;
-
-        var rotation = Camera.main.transform.rotation;
+        var inverseBasisSpace = math.inverse(basisSpace);
 
         foreach (var unit in _selectedUnits)
         {
-            var position = rotation * unit.transform.position;
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var unitPosition = math.mul(inverseBasisSpace, new float2(unit.transform.position.x, unit.transform.position.z));
 
-            if (position.x < minX)
+            var points = new List<float2>()
             {
-                minUnitPosX = unit.transform.position.x;
-                minX = position.x;
+                unitPosition + new float2(0, 1) * unitComponent.Radius,
+                unitPosition - new float2(0, 1) * unitComponent.Radius,
+                unitPosition + new float2(1, 0) * unitComponent.Radius,
+                unitPosition - new float2(1, 0) * unitComponent.Radius
+            };
+
+            // Debug.DrawRay(Vector3.zero, unit.transform.position, Color.blue, 10);
+            // Debug.DrawRay(Vector3.zero, new Vector3(points[0].x, 0, points[0].y), Color.magenta, 10);
+
+            foreach (var point in points)
+            {
+                if (point.x > maxPoint.x)
+                {
+                    maxPoint.x = point.x;
+                }
+
+                if (point.x < minPoint.x)
+                {
+                    minPoint.x = point.x;
+                }
+
+                if (point.y > maxPoint.y)
+                {
+                    maxPoint.y = point.y;
+                }
+
+                if (point.y < minPoint.y)
+                {
+                    minPoint.y = point.y;
+                }
             }
 
-            if (position.x > maxX)
-            {
-                maxUnitPosX = unit.transform.position.x;
-                maxX = position.x;
-            }
-
-            if (position.z < minZ)
-            {
-                minUnitPosZ = unit.transform.position.z;
-                minZ = position.z;
-            }
-
-            if (position.z > maxZ)
-            {
-                maxUnitPosZ = unit.transform.position.z;
-                maxZ = position.z;
-            }
         }
 
-        var minPoint = new Vector3(minUnitPosX, 0, minUnitPosZ);
-        var maxPoint = new Vector3(maxUnitPosX, 0, maxUnitPosZ);
+        // Debug.DrawRay(Vector3.zero, new Vector3(minPoint.x, 0, minPoint.y), Color.red, 10);
+        // Debug.DrawRay(Vector3.zero, new Vector3(maxPoint.x, 0, maxPoint.y), Color.green, 10);
 
-        var v1 = new Vector3(minPoint.x, 0, maxPoint.z);
-        var v2 = new Vector3(maxPoint.x, 0, minPoint.z);
+        var tempMin = math.mul(basisSpace, minPoint);
+        var minWorldPoint = new Vector3(tempMin.x, 0, tempMin.y);
+
+        var tempMax = math.mul(basisSpace, maxPoint);
+        var maxWorldPoint = new Vector3(tempMax.x, 0, tempMax.y);
+
+        var tempv1 = math.mul(basisSpace, new float2(minPoint.x, maxPoint.y));
+        var v1 = new Vector3(tempv1.x, 0, tempv1.y);
+
+        var tempv2 = math.mul(basisSpace, new float2(maxPoint.x, minPoint.y));
+        var v2 = new Vector3(tempv2.x, 0, tempv2.y);
+
 
 #if UNITY_EDITOR
-        Debug.DrawLine(minPoint, v1, Color.magenta, 10);
-        Debug.DrawLine(v1, maxPoint, Color.magenta, 10);
-        Debug.DrawLine(maxPoint, v2, Color.magenta, 10);
-        Debug.DrawLine(v2, minPoint, Color.magenta, 10);
+        // Debug.DrawLine(Vector3.zero, minWorldPoint, Color.black, 10);
+        // Debug.DrawLine(Vector3.zero, maxWorldPoint, Color.black, 10);
 
-        Debug.Log(v1 + " " + v2 + " " + minPoint + " " + maxPoint);
+        Debug.DrawLine(minWorldPoint, v1, Color.magenta, 10);
+        Debug.DrawLine(v1, maxWorldPoint, Color.magenta, 10);
+        Debug.DrawLine(maxWorldPoint, v2, Color.magenta, 10);
+        Debug.DrawLine(v2, minWorldPoint, Color.magenta, 10);
+
+        // Debug.Log(v1 + " " + v2 + " " + minPoint + " " + maxPoint);
 #endif
-
 
         // Don't do full camera rotation because I want to assume that the bounding box
         // is flat
         var cameraRotation = Quaternion.Euler(0, Camera.main.transform.rotation.y, 0);
-        var relativeTargetCenter = targetCenter - minPoint;
+        var relativeTargetCenter = targetCenter - minWorldPoint;
         relativeTargetCenter = cameraRotation * relativeTargetCenter;
 
-        var width = Mathf.Abs(maxPoint.x - minPoint.x);
-        var height = Mathf.Abs(maxPoint.z - minPoint.z);
+        var width = Mathf.Abs(maxWorldPoint.x - minWorldPoint.x);
+        var height = Mathf.Abs(maxWorldPoint.z - minWorldPoint.z);
 
         if (
             relativeTargetCenter.x <= width
@@ -238,35 +260,22 @@ public class InputManager : MonoBehaviour
             && relativeTargetCenter.z >= 0)
         {
             // Handle inner click
-            return null;
+            return CalculateInnerPosition(targetCenter);
         }
         else
         {
-            return CalculateOuterPosition(targetCenter, minPoint, maxPoint);
+            return CalculateOuterPosition(targetCenter, minWorldPoint, maxWorldPoint);
         }
     }
 
     private Dictionary<GameObject, Vector3> CalculateInnerPosition(Vector3 targetCenter)
     {
-        var unitCount = _selectedUnits.Count;
-        var columnCount = Mathf.Sqrt(unitCount);
-
-        // asssume tight positioning
-        var minUnitSize = Mathf.NegativeInfinity;
+        var result = new Dictionary<GameObject, Vector3>();
         foreach (var unit in _selectedUnits)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
-            if (unitComponent.Radius < minUnitSize)
-            {
-                minUnitSize = unitComponent.Radius;
-            }
+            result.Add(unit, targetCenter);
         }
-
-        var topLeft =
-        for (int i = 0; i < columnCount; i++)
-        {
-
-        }
+        return result;
     }
 
     private Dictionary<GameObject, Vector3> CalculateOuterPosition(
