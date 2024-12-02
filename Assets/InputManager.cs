@@ -236,10 +236,10 @@ public class InputManager : MonoBehaviour
         // Debug.DrawLine(Vector3.zero, minWorldPoint, Color.black, 10);
         // Debug.DrawLine(Vector3.zero, maxWorldPoint, Color.black, 10);
 
-        Debug.DrawLine(minWorldPoint, v1, Color.magenta, 10);
-        Debug.DrawLine(v1, maxWorldPoint, Color.magenta, 10);
-        Debug.DrawLine(maxWorldPoint, v2, Color.magenta, 10);
-        Debug.DrawLine(v2, minWorldPoint, Color.magenta, 10);
+        // Debug.DrawLine(minWorldPoint, v1, Color.magenta, 10);
+        // Debug.DrawLine(v1, maxWorldPoint, Color.magenta, 10);
+        // Debug.DrawLine(maxWorldPoint, v2, Color.magenta, 10);
+        // Debug.DrawLine(v2, minWorldPoint, Color.magenta, 10);
 
         // Debug.Log(v1 + " " + v2 + " " + minPoint + " " + maxPoint);
 #endif

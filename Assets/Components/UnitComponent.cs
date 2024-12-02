@@ -18,6 +18,13 @@ public class UnitComponent : MonoBehaviour, IComponent
     public Arrive Arrive;
     public Kinematic Kinematic;
     public BasicMovement BasicMovement;
+    public State State;
+}
+
+public enum State
+{
+    Stationary,
+    Moving
 }
 
 
