@@ -18,15 +18,7 @@ public class UnitComponent : MonoBehaviour, IComponent
     public Arrive Arrive;
     public Kinematic Kinematic;
     public BasicMovement BasicMovement;
-    public State State;
 }
-
-public enum State
-{
-    Stationary,
-    Moving
-}
-
 
 [System.Serializable]
 public class Arrive
@@ -51,4 +43,7 @@ public class BasicMovement
 {
     [ReadOnly] public Vector3 TargetPosition;
     [ReadOnly] public float TargetOrientation;
+
+    public Vector3 RelativeDeltaStart;
+    public bool Resolved = true;
 }

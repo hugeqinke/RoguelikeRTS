@@ -5,9 +5,11 @@ using UnityEngine;
 public class Simulator : MonoBehaviour
 {
     public float NeighborScanRadius;
-    public float InTargetRadius;
+    public float TargetInfluenceRadius;
+    public float PushableRadius;
     public float ResponseCoefficient;
 
+    public InputManager InputManager;
     public static Entity Entity;
 
     private void Awake()
@@ -28,32 +30,27 @@ public class Simulator : MonoBehaviour
             typeof(UnitComponent)
         });
 
-        foreach (var unit in units)
+        // Iterate through units with active commands
+        foreach (var moveGroup in InputManager.MoveGroups)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
-
-            // Decide state
-            var neighbors = GetNeighbors(unit);
-            var collidingNeighbor = GetCollidingNeighbor(unit, neighbors);
-            var shouldStop = ShouldStop(unit, collidingNeighbor);
-
-            var unitState = new UnitState()
+            foreach (var unit in moveGroup.Units)
             {
-                UnitComponent = unitComponent,
-                CollidingNeighbor = collidingNeighbor,
-                Arrived = ArrivedAtTarget(unit),
-                ShouldStop = shouldStop
-            };
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+                if (unitComponent.BasicMovement.Resolved)
+                {
+                    continue;
+                }
+                else
+                {
+                    // Check stop
+                    if (TriggerStop(unit, moveGroup))
+                    {
+                        unitComponent.BasicMovement.Resolved = true;
+                    }
 
-            if (unitState.CollidingNeighbor != null)
-            {
-                Debug.DrawLine(
-                    unit.transform.position,
-                    unitState.CollidingNeighbor.transform.position,
-                    Color.magenta);
+                    DecidePhysicsAction(unit, unitComponent);
+                }
             }
-
-            DecidePhysicsAction(unit, unitComponent, unitState);
         }
 
         foreach (var unit in units)
@@ -72,17 +69,20 @@ public class Simulator : MonoBehaviour
         var unitComponent = unit.FetchComponent<UnitComponent>();
         var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
 
-        var relativeDir = unitComponent.Kinematic.Position - neighborUnitComponent.Kinematic.Position;
+        var relativeDir = unit.transform.position - neighbor.transform.position;
         relativeDir.y = 0;
 
         var sqrDst = relativeDir.sqrMagnitude;
         if (sqrDst < Mathf.Epsilon)
         {
+            // Add offset for the off case that the unit is right on top of another
+            // unit - thought maybe it's better to just teleport one of the
+            // units out of the body
             relativeDir = Vector3.right * 0.0001f;
             sqrDst = relativeDir.sqrMagnitude;
         }
 
-        var thresholdRadius = (unitComponent.Radius + neighborUnitComponent.Radius);
+        var thresholdRadius = unitComponent.Radius + neighborUnitComponent.Radius;
 
         // TODO: handle sqrDst <= Mathf.Epsilon case
         if (sqrDst < thresholdRadius * thresholdRadius)
@@ -100,32 +100,74 @@ public class Simulator : MonoBehaviour
         }
     }
 
-    private bool ShouldStop(GameObject unit, GameObject collidingNeighbor)
+    private bool TriggerStop(GameObject unit, MoveGroup moveGroup)
     {
+        var unitComponent = unit.FetchComponent<UnitComponent>();
 
+        if (ArrivedAtTarget(unit))
+        {
+            return true;
+        }
+
+        var currentDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
+        var angle = Vector3.Dot(currentDir.normalized, unitComponent.BasicMovement.RelativeDeltaStart.normalized);
+        if (angle < Mathf.Cos(90))
+        {
+            Debug.Log("Activated");
+            return true;
+        }
+
+        var neighbors = GetNeighbors(unit);
+        foreach (var neighbor in neighbors)
+        {
+            if (moveGroup.Units.Contains(neighbor))
+            {
+                // Handle the case where units are in the same move group
+                // Important subcase 
+                var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+                if (IsColliding(unit, neighbor))
+                {
+                    var unitVelocity = unitComponent.Kinematic.Velocity.normalized;
+                    var neighborUnitVelocity = neighborUnitComponent.Kinematic.Velocity.normalized;
+                    if (NearTarget(unit) && Vector3.Dot(unitVelocity, neighborUnitVelocity) < Mathf.Cos(90))
+                    {
+                        return true;
+                    }
+
+                    if (neighborUnitComponent.BasicMovement.Resolved)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private bool ShouldStop(GameObject unit, List<GameObject> neighbors)
+    {
         var unitComponent = unit.FetchComponent<UnitComponent>();
         var sqrDst = (unit.transform.position - unitComponent.Kinematic.Position).sqrMagnitude;
 
-        if (sqrDst > InTargetRadius)
+        if (ArrivedAtTarget(unit))
         {
-            return false;
+            return true;
         }
-        else
+
+        var desiredVelocity = (unitComponent.BasicMovement.TargetPosition - unit.transform.position).normalized * unitComponent.Kinematic.SpeedCap;
+
+        foreach (var neighbor in neighbors)
         {
-            var desiredVelocity = (unitComponent.BasicMovement.TargetPosition - unit.transform.position).normalized * unitComponent.Kinematic.SpeedCap;
-
-            if (collidingNeighbor != null)
+            if (IsColliding(unit, neighbor))
             {
-                var neighborUnitComponent = collidingNeighbor.FetchComponent<UnitComponent>();
-                var directional = Vector3.Dot(
-                    neighborUnitComponent.Kinematic.Velocity,
-                    desiredVelocity);
-
-                if (neighborUnitComponent.Kinematic.Velocity.sqrMagnitude < Mathf.Epsilon || directional > 0)
+                if (NearTarget(unit))
                 {
-                    return false;
+                    return true;
                 }
-                else
+
+                var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+                if (neighborUnitComponent.BasicMovement.Resolved)
                 {
                     return true;
                 }
@@ -135,37 +177,37 @@ public class Simulator : MonoBehaviour
         return false;
     }
 
-    private void DecidePhysicsAction(
-            GameObject unit,
-            UnitComponent unitComponent,
-            UnitState unitState)
+    private void DecidePhysicsAction(GameObject unit, UnitComponent unitComponent)
     {
-        if (unitState.Arrived)
+        if (unitComponent.BasicMovement.Resolved)
         {
             ForceStop(unit);
         }
         else
         {
-            if (unitState.ShouldStop)
-            {
-                ForceStop(unit);
-            }
-            else
-            {
-                var steeringResult = Steering.ArriveBehavior.GetSteering(
-                                unitComponent.Kinematic,
-                                unitComponent.Arrive,
-                                unitComponent.BasicMovement.TargetPosition);
+            var steeringResult = Steering.ArriveBehavior.GetSteering(
+                            unitComponent.Kinematic,
+                            unitComponent.Arrive,
+                            unitComponent.BasicMovement.TargetPosition);
 
-                if (steeringResult != null)
-                {
-                    unitComponent.Kinematic.Velocity += steeringResult.Acceleration * Time.fixedDeltaTime;
-                    unitComponent.Kinematic.Position += unitComponent.Kinematic.Velocity * Time.fixedDeltaTime;
+            if (steeringResult != null)
+            {
+                unitComponent.Kinematic.Velocity += steeringResult.Acceleration * Time.fixedDeltaTime;
+                unitComponent.Kinematic.Position += unitComponent.Kinematic.Velocity * Time.fixedDeltaTime;
 
-                    unit.transform.position = unitComponent.Kinematic.Position;
-                }
+                unit.transform.position = unitComponent.Kinematic.Position;
             }
         }
+    }
+
+    private bool InTargetInfluenceRadius(GameObject unit)
+    {
+        var unitComponent = unit.GetComponent<UnitComponent>();
+        var position = unitComponent.Kinematic.Position;
+        var targetPosition = unitComponent.BasicMovement.TargetPosition;
+
+        var radius = TargetInfluenceRadius;
+        return (position - targetPosition).sqrMagnitude <= radius * radius;
     }
 
     private void ForceStop(GameObject unit)
@@ -173,6 +215,16 @@ public class Simulator : MonoBehaviour
         var unitComponent = unit.FetchComponent<UnitComponent>();
         unitComponent.BasicMovement.TargetPosition = unit.transform.position;
         unitComponent.Kinematic.Velocity = Vector3.zero;
+    }
+
+    private bool NearTarget(GameObject unit)
+    {
+        var unitComponent = unit.GetComponent<UnitComponent>();
+        var position = unitComponent.Kinematic.Position;
+        var targetPosition = unitComponent.BasicMovement.TargetPosition;
+
+        var stopRadius = unitComponent.Radius * 1.5f;
+        return (position - targetPosition).sqrMagnitude <= stopRadius * stopRadius;
     }
 
     private bool ArrivedAtTarget(GameObject unit)
@@ -183,6 +235,18 @@ public class Simulator : MonoBehaviour
 
         var stopRadius = unitComponent.Arrive.StopRadius;
         return (position - targetPosition).sqrMagnitude <= stopRadius * stopRadius;
+    }
+
+    private bool IsColliding(GameObject unit, GameObject neighbor)
+    {
+        var neighborUnitComponent = neighbor.GetComponent<UnitComponent>();
+        var unitComponent = unit.GetComponent<UnitComponent>();
+
+        var dist = (neighbor.transform.position - unit.transform.position).magnitude;
+        dist -= unitComponent.Radius;
+        dist -= neighborUnitComponent.Radius;
+
+        return dist < Mathf.Epsilon;
     }
 
     private GameObject GetCollidingNeighbor(GameObject unit, List<GameObject> neighbors)
@@ -274,5 +338,4 @@ public class UnitState
     public UnitComponent UnitComponent;
     public GameObject CollidingNeighbor;
     public bool Arrived;
-    public bool ShouldStop;
 }

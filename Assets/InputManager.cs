@@ -12,6 +12,16 @@ public enum InputState
     BoxSelect
 }
 
+public class MoveGroup
+{
+    public HashSet<GameObject> Units;
+
+    public MoveGroup()
+    {
+        Units = new HashSet<GameObject>();
+    }
+}
+
 public class InputManager : MonoBehaviour
 {
     public BoxRenderer BoxRenderer;
@@ -21,10 +31,15 @@ public class InputManager : MonoBehaviour
     private SelectingContext _selectingContext;
     private BoxSelectContext _boxSelectContext;
 
+    public List<MoveGroup> MoveGroups;
+    private Dictionary<GameObject, MoveGroup> _moveGroupMap;
+
     // Start is called before the first frame update
     void Start()
     {
         _selectedUnits = new HashSet<GameObject>();
+        MoveGroups = new List<MoveGroup>();
+        _moveGroupMap = new Dictionary<GameObject, MoveGroup>();
     }
 
     // Update is called once per frame
@@ -253,6 +268,7 @@ public class InputManager : MonoBehaviour
         var width = Mathf.Abs(maxWorldPoint.x - minWorldPoint.x);
         var height = Mathf.Abs(maxWorldPoint.z - minWorldPoint.z);
 
+
         if (
             relativeTargetCenter.x <= width
             && relativeTargetCenter.x >= 0
@@ -398,15 +414,40 @@ public class InputManager : MonoBehaviour
         var ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
         if (Physics.Raycast(ray, out RaycastHit hitInfo, 600, InputUtils.GroundLayerMask))
         {
+            var point = hitInfo.point;
+            point.y = 0;
+
             // Calculate target positions
-            var positions = CalculateTargetPositions(hitInfo.point);
+            var positions = CalculateTargetPositions(point);
+
+            var moveGroup = new MoveGroup();
 
             // Update target positions
             foreach (var unit in _selectedUnits)
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
                 unitComponent.BasicMovement.TargetPosition = positions[unit];
+                unitComponent.BasicMovement.RelativeDeltaStart = positions[unit] - unit.transform.position;
+                unitComponent.BasicMovement.Resolved = false;
+
+                // Clear from old movegroup
+                if (_moveGroupMap.ContainsKey(unit))
+                {
+                    var oldMoveGroup = _moveGroupMap[unit];
+                    if (oldMoveGroup.Units.Contains(unit))
+                    {
+                        oldMoveGroup.Units.Remove(unit);
+                    }
+
+                    _moveGroupMap.Remove(unit);
+                }
+
+                // Add to new MoveGroup
+                moveGroup.Units.Add(unit);
+                _moveGroupMap.Add(unit, moveGroup);
             }
+
+            MoveGroups.Add(moveGroup);
         }
     }
 

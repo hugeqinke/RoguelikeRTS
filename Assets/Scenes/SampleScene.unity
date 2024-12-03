@@ -229,17 +229,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &12528806
 Transform:
   m_ObjectHideFlags: 0
@@ -363,17 +364,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &12634476
 Transform:
   m_ObjectHideFlags: 0
@@ -663,17 +665,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &220593828
 Transform:
   m_ObjectHideFlags: 0
@@ -797,17 +800,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &250116486
 Transform:
   m_ObjectHideFlags: 0
@@ -1116,17 +1120,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &321624169
 Transform:
   m_ObjectHideFlags: 0
@@ -2306,17 +2311,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &773192642
 Transform:
   m_ObjectHideFlags: 0
@@ -2326,7 +2332,7 @@ Transform:
   m_GameObject: {fileID: 773192636}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.16700006, y: 0, z: 1.3059998}
+  m_LocalPosition: {x: -2.02, y: 0, z: -3.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2638,9 +2644,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27e373413ef2e34f8d4c1c2abc62c84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  NeighborScanRadius: 3
-  InTargetRadius: 0
+  NeighborScanRadius: 4
+  TargetInfluenceRadius: 0
+  PushableRadius: 2
   ResponseCoefficient: 1
+  InputManager: {fileID: 465716417}
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -2914,17 +2922,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &988399709
 Transform:
   m_ObjectHideFlags: 0
@@ -2934,7 +2943,7 @@ Transform:
   m_GameObject: {fileID: 988399703}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.80700016, y: 0, z: 1.1059997}
+  m_LocalPosition: {x: 0.5, y: 0, z: -2.45}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4129,17 +4138,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &1381985115
 Transform:
   m_ObjectHideFlags: 0
@@ -4478,17 +4488,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!114 &1547133311
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4838,17 +4849,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &1641530792
 Transform:
   m_ObjectHideFlags: 0
@@ -4858,7 +4870,7 @@ Transform:
   m_GameObject: {fileID: 1641530786}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.1, y: 0, z: -1.85}
+  m_LocalPosition: {x: -3.47, y: 0, z: -2.35}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4972,17 +4984,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &1690951699
 Transform:
   m_ObjectHideFlags: 0
@@ -4992,7 +5005,7 @@ Transform:
   m_GameObject: {fileID: 1690951693}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.278, y: 0, z: 0.96699977}
+  m_LocalPosition: {x: -0.39, y: 0, z: -0.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5755,17 +5768,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &1956113469
 Transform:
   m_ObjectHideFlags: 0
@@ -6278,17 +6292,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &2094209989
 Transform:
   m_ObjectHideFlags: 0
@@ -6298,7 +6313,7 @@ Transform:
   m_GameObject: {fileID: 2094209983}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.918, y: 0, z: 1.1669998}
+  m_LocalPosition: {x: -2.56, y: 0, z: -0.94}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -6487,17 +6502,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &2135150187
 Transform:
   m_ObjectHideFlags: 0
@@ -6621,17 +6637,18 @@ MonoBehaviour:
   Radius: 0.5
   Arrive:
     SlowThreshold: 0.2
-    StopRadius: 0.05
+    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 1000
+    AccelerationCap: 5000
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
   BasicMovement:
     TargetPosition: {x: 0, y: 0, z: 0}
     TargetOrientation: 0
-  State: 0
+    RelativeDeltaStart: {x: 0, y: 0, z: 0}
+    Resolved: 0
 --- !u!4 &2140391776
 Transform:
   m_ObjectHideFlags: 0
