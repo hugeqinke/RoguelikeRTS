@@ -165,16 +165,30 @@ public class Simulator : MonoBehaviour
         // TODO: handle sqrDst <= Mathf.Epsilon case
         if (sqrDst < thresholdRadius * thresholdRadius)
         {
-            var dst = Mathf.Sqrt(sqrDst);
+            if (unitComponent.BasicMovement.Resolved == neighborUnitComponent.BasicMovement.Resolved)
+            {
+                var dst = Mathf.Sqrt(sqrDst);
 
-            var delta = ResponseCoefficient * 0.5f * (thresholdRadius - dst);
-            var pushVec = relativeDir.normalized * delta;
+                var delta = ResponseCoefficient * 0.5f * (thresholdRadius - dst);
+                var pushVec = relativeDir.normalized * delta;
 
-            unitComponent.Kinematic.Position += pushVec;
-            unitComponent.transform.position = unitComponent.Kinematic.Position;
+                unitComponent.Kinematic.Position += pushVec;
+                unitComponent.transform.position = unitComponent.Kinematic.Position;
 
-            neighborUnitComponent.Kinematic.Position -= pushVec;
-            neighbor.transform.position = neighborUnitComponent.Kinematic.Position;
+                neighborUnitComponent.Kinematic.Position -= pushVec;
+                neighbor.transform.position = neighborUnitComponent.Kinematic.Position;
+            }
+            else if (unitComponent.BasicMovement.Resolved)
+            {
+                var dst = Mathf.Sqrt(sqrDst);
+
+                // var delta = ResponseCoefficient * 0.5f * (thresholdRadius - dst);
+                var delta = ResponseCoefficient * 0.5f * (thresholdRadius - dst);
+                var pushVec = relativeDir.normalized * delta;
+
+                unitComponent.Kinematic.Position += pushVec;
+                unitComponent.transform.position = unitComponent.Kinematic.Position;
+            }
         }
     }
 
