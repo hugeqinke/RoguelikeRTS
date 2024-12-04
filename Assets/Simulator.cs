@@ -84,58 +84,46 @@ public class Simulator : MonoBehaviour
 
         // Get nearest colliding neighbor, where the neighbor is moving towards
         // this unit
-        GameObject nearNeighbor = null;
-        var nearSqrDst = Mathf.Infinity;
+        var calculatedVelocity = Vector3.zero;
+        var count = 0;
+
         foreach (var neighbor in neighbors)
         {
             if (InPushRadius(unit, neighbor))
             {
-                var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
-                var rel = unit.transform.position - neighbor.transform.position;
-                var dir = rel.normalized;
-                var velDir = neighborUnitComponent.Kinematic.Velocity.normalized;
-                if (velDir.sqrMagnitude > Mathf.Epsilon && Vector3.Dot(dir, velDir) > 0)
+                // Calculate how much an "inactive" unit should be pushed
+                var nearUnitComponent = neighbor.FetchComponent<UnitComponent>();
+                var relativeDir = unit.transform.position - nearUnitComponent.transform.position;
+                var appliedVelocity = relativeDir.normalized * nearUnitComponent.Kinematic.Velocity.magnitude;
+                var velocity = nearUnitComponent.Kinematic.Velocity;
+
+                if (!nearUnitComponent.BasicMovement.Resolved)
                 {
-                    var sqrDst = rel.sqrMagnitude;
-                    if (sqrDst < nearSqrDst)
-                    {
-                        nearNeighbor = neighbor;
-                        nearSqrDst = sqrDst;
-                    }
+                    var angle = Vector3.SignedAngle(velocity, relativeDir, Vector3.up);
+                    var angleSign = Mathf.Sign(angle);
+                    var normalVelocity = Quaternion.Euler(0, angleSign * 90, 0) * velocity;
+
+                    // Add a lower bound so that turn rate is faster
+                    var t = Mathf.Max(Mathf.InverseLerp(0, 90, Mathf.Abs(angle)), 0.1f);
+                    var perpIntensity = Mathf.Lerp(0, 1, t);
+                    var forwardIntensity = 1 - perpIntensity;
+                    appliedVelocity = perpIntensity * normalVelocity + forwardIntensity * velocity;
                 }
+
+                calculatedVelocity += appliedVelocity;
+                count++;
             }
         }
 
-        if (nearNeighbor != null)
+        if (count > 0)
         {
-            // Calculate how much an "inactive" unit should be pushed
-            var nearUnitComponent = nearNeighbor.FetchComponent<UnitComponent>();
-            var relativeDir = unit.transform.position - nearUnitComponent.transform.position;
-            var calculatedVelocity = relativeDir.normalized * nearUnitComponent.Kinematic.Velocity.magnitude;
-            var velocity = nearUnitComponent.Kinematic.Velocity;
-
-            if (!nearUnitComponent.BasicMovement.Resolved)
-            {
-                var angle = Vector3.SignedAngle(velocity, relativeDir, Vector3.up);
-                var angleSign = Mathf.Sign(angle);
-                var normalVelocity = Quaternion.Euler(0, angleSign * 90, 0) * velocity;
-
-                // Add a lower bound so that turn rate is faster
-                var t = Mathf.Max(Mathf.InverseLerp(0, 90, Mathf.Abs(angle)), 0.1f);
-                var perpIntensity = Mathf.Lerp(0, 1, t);
-                var forwardIntensity = 1 - perpIntensity;
-                calculatedVelocity = perpIntensity * normalVelocity + forwardIntensity * velocity;
-            }
-
-            // match the velocity
-            unitComponent.Kinematic.Velocity = calculatedVelocity;
-            unitComponent.Kinematic.Position += unitComponent.Kinematic.Velocity * Time.fixedDeltaTime;
-            unit.transform.position = unitComponent.Kinematic.Position;
+            calculatedVelocity /= count;
         }
-        else
-        {
-            ForceStop(unit);
-        }
+
+        // match the velocity
+        unitComponent.Kinematic.Velocity = calculatedVelocity;
+        unitComponent.Kinematic.Position += unitComponent.Kinematic.Velocity * Time.fixedDeltaTime;
+        unit.transform.position = unitComponent.Kinematic.Position;
     }
 
     private bool InPushRadius(GameObject unit, GameObject neighbor)
