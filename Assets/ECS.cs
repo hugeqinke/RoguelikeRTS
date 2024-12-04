@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using RoguelikeRTS;
+
 public static class EntityFactory
 {
     public static void RegisterItem(GameObject obj)

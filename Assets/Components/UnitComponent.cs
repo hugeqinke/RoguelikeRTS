@@ -18,6 +18,7 @@ public class UnitComponent : MonoBehaviour, IComponent
     public Arrive Arrive;
     public Kinematic Kinematic;
     public BasicMovement BasicMovement;
+    public RVO.Agent Agent;
 }
 
 [System.Serializable]
