@@ -31,15 +31,15 @@ public class InputManager : MonoBehaviour
     private SelectingContext _selectingContext;
     private BoxSelectContext _boxSelectContext;
 
-    public List<MoveGroup> MoveGroups;
-    private Dictionary<GameObject, MoveGroup> _moveGroupMap;
+    public HashSet<MoveGroup> MoveGroups;
+    public Dictionary<GameObject, MoveGroup> MoveGroupMap;
 
     // Start is called before the first frame update
     void Start()
     {
         _selectedUnits = new HashSet<GameObject>();
-        MoveGroups = new List<MoveGroup>();
-        _moveGroupMap = new Dictionary<GameObject, MoveGroup>();
+        MoveGroups = new HashSet<MoveGroup>();
+        MoveGroupMap = new Dictionary<GameObject, MoveGroup>();
     }
 
     // Update is called once per frame
@@ -57,6 +57,41 @@ public class InputManager : MonoBehaviour
                 ProcessBoxSelect();
                 break;
         }
+    }
+
+    private void LateUpdate()
+    {
+        var resolvedGroups = new List<MoveGroup>();
+        foreach (var moveGroup in MoveGroups)
+        {
+            if (IsMoveGroupResolved(moveGroup))
+            {
+                resolvedGroups.Add(moveGroup);
+            }
+        }
+
+        foreach (var group in resolvedGroups)
+        {
+            MoveGroups.Remove(group);
+            foreach (var unit in group.Units)
+            {
+                MoveGroupMap.Remove(unit);
+            }
+        }
+    }
+
+    private bool IsMoveGroupResolved(MoveGroup moveGroup)
+    {
+        foreach (var unit in moveGroup.Units)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            if (!unitComponent.BasicMovement.Resolved)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // State processors
@@ -228,7 +263,6 @@ public class InputManager : MonoBehaviour
                     minPoint.y = point.y;
                 }
             }
-
         }
 
         // Debug.DrawRay(Vector3.zero, new Vector3(minPoint.x, 0, minPoint.y), Color.red, 10);
@@ -420,31 +454,41 @@ public class InputManager : MonoBehaviour
             // Calculate target positions
             var positions = CalculateTargetPositions(point);
 
-            var moveGroup = new MoveGroup();
-
             // Update target positions
+            var moveGroup = new MoveGroup();
             foreach (var unit in _selectedUnits)
             {
+                // Update unit state
                 var unitComponent = unit.FetchComponent<UnitComponent>();
                 unitComponent.BasicMovement.TargetPosition = positions[unit];
                 unitComponent.BasicMovement.RelativeDeltaStart = positions[unit] - unit.transform.position;
                 unitComponent.BasicMovement.Resolved = false;
 
-                // Clear from old movegroup
-                if (_moveGroupMap.ContainsKey(unit))
+                var dir = positions[unit] - unit.transform.position;
+                if (dir.sqrMagnitude > Mathf.Epsilon)
                 {
-                    var oldMoveGroup = _moveGroupMap[unit];
+                    unitComponent.Kinematic.Orientation = Vector3.SignedAngle(
+                        Vector3.forward,
+                        dir,
+                        Vector3.up
+                    );
+                }
+
+                // Clear from old movegroup
+                if (MoveGroupMap.ContainsKey(unit))
+                {
+                    var oldMoveGroup = MoveGroupMap[unit];
                     if (oldMoveGroup.Units.Contains(unit))
                     {
                         oldMoveGroup.Units.Remove(unit);
                     }
 
-                    _moveGroupMap.Remove(unit);
+                    MoveGroupMap.Remove(unit);
                 }
 
                 // Add to new MoveGroup
                 moveGroup.Units.Add(unit);
-                _moveGroupMap.Add(unit, moveGroup);
+                MoveGroupMap.Add(unit, moveGroup);
             }
 
             MoveGroups.Add(moveGroup);
@@ -538,6 +582,19 @@ public static class InputUtils
 
 public static class MathUtil
 {
+    public static float NormalizeOrientation(float value)
+    {
+        return NormalizeAngle(value, 0, 360);
+    }
+
+    public static float NormalizeAngle(float value, float start, float end)
+    {
+        var width = end - start;
+        var offsetValue = value - start;
+
+        return (offsetValue - (Mathf.Floor(offsetValue / width) * width)) + start;
+    }
+
     public class Plane
     {
         public Vector3 Normal;

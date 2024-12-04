@@ -25,34 +25,35 @@ public class Simulator : MonoBehaviour
 
     private void FixedUpdate()
     {
+        // Units main processing
         var units = Entity.Fetch(new List<System.Type>()
         {
             typeof(UnitComponent)
         });
 
-        // Iterate through units with active commands
-        foreach (var moveGroup in InputManager.MoveGroups)
+        foreach (var unit in units)
         {
-            foreach (var unit in moveGroup.Units)
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            if (InputManager.MoveGroupMap.ContainsKey(unit))
             {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
-                if (unitComponent.BasicMovement.Resolved)
+                if (!unitComponent.BasicMovement.Resolved)
                 {
-                    continue;
-                }
-                else
-                {
-                    // Check stop
+                    var moveGroup = InputManager.MoveGroupMap[unit];
                     if (TriggerStop(unit, moveGroup))
                     {
                         unitComponent.BasicMovement.Resolved = true;
                     }
 
-                    DecidePhysicsAction(unit, unitComponent);
+                    DecideActivePhysicsAction(unit, unitComponent);
                 }
+            }
+            else
+            {
+                DecidePassivePhysicsAction(unit, unitComponent);
             }
         }
 
+        // Post processing
         foreach (var unit in units)
         {
             var neighbors = GetNeighbors(unit);
@@ -61,7 +62,96 @@ public class Simulator : MonoBehaviour
             {
                 ResolveCollision(unit, neighbor);
             }
+
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            if (unitComponent.Kinematic.Velocity.sqrMagnitude > Mathf.Epsilon)
+            {
+                var orientation = MathUtil.NormalizeOrientation(
+                    Vector3.SignedAngle(
+                        Vector3.forward,
+                        unitComponent.Kinematic.Velocity,
+                        Vector3.up));
+
+                unitComponent.Kinematic.Orientation = orientation;
+            }
         }
+    }
+
+    private void DecidePassivePhysicsAction(GameObject unit, UnitComponent unitComponent)
+    {
+        Debug.Log("Triggered");
+        var neighbors = GetNeighbors(unit);
+
+        // Get nearest colliding neighbor, where the neighbor is moving towards
+        // this unit
+        GameObject nearNeighbor = null;
+        var nearSqrDst = Mathf.Infinity;
+        foreach (var neighbor in neighbors)
+        {
+            if (InPushRadius(unit, neighbor))
+            {
+                var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+                var rel = unit.transform.position - neighbor.transform.position;
+                var dir = rel.normalized;
+                var velDir = neighborUnitComponent.Kinematic.Velocity.normalized;
+                if (velDir.sqrMagnitude > Mathf.Epsilon && Vector3.Dot(dir, velDir) > 0)
+                {
+                    var sqrDst = rel.sqrMagnitude;
+                    if (sqrDst < nearSqrDst)
+                    {
+                        nearNeighbor = neighbor;
+                        nearSqrDst = sqrDst;
+                    }
+                }
+            }
+        }
+
+        if (nearNeighbor != null)
+        {
+            // Calculate how much an "inactive" unit should be pushed
+            var nearUnitComponent = nearNeighbor.FetchComponent<UnitComponent>();
+            var relativeDir = unit.transform.position - nearUnitComponent.transform.position;
+            var calculatedVelocity = relativeDir.normalized * nearUnitComponent.Kinematic.Velocity.magnitude;
+            var velocity = nearUnitComponent.Kinematic.Velocity;
+
+            if (!nearUnitComponent.BasicMovement.Resolved)
+            {
+                var angle = Vector3.SignedAngle(velocity, relativeDir, Vector3.up);
+                var angleSign = Mathf.Sign(angle);
+                var normalVelocity = Quaternion.Euler(0, angleSign * 90, 0) * velocity;
+
+                // Add a lower bound so that turn rate is faster
+                var t = Mathf.Max(Mathf.InverseLerp(0, 90, Mathf.Abs(angle)), 0.1f);
+                var perpIntensity = Mathf.Lerp(0, 1, t);
+                var forwardIntensity = 1 - perpIntensity;
+                calculatedVelocity = perpIntensity * normalVelocity + forwardIntensity * velocity;
+            }
+
+            // match the velocity
+            unitComponent.Kinematic.Velocity = calculatedVelocity;
+            unitComponent.Kinematic.Position += unitComponent.Kinematic.Velocity * Time.fixedDeltaTime;
+            unit.transform.position = unitComponent.Kinematic.Position;
+        }
+        else
+        {
+            ForceStop(unit);
+        }
+    }
+
+    private bool InPushRadius(GameObject unit, GameObject neighbor)
+    {
+        var neighborUnitComponent = neighbor.GetComponent<UnitComponent>();
+        var unitComponent = unit.GetComponent<UnitComponent>();
+
+        var dist = (neighbor.transform.position - unit.transform.position).magnitude;
+        dist -= unitComponent.Radius;
+        dist -= neighborUnitComponent.Radius;
+        // Add a small offset to prevent "stuttering" due to the impulse force
+        // (from resolving collisions) kicking neighbors out of the push influence region
+        dist -= 0.025f;
+
+        return dist < Mathf.Epsilon;
+
     }
 
     private void ResolveCollision(GameObject unit, GameObject neighbor)
@@ -111,7 +201,7 @@ public class Simulator : MonoBehaviour
 
         var currentDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
         var angle = Vector3.Dot(currentDir.normalized, unitComponent.BasicMovement.RelativeDeltaStart.normalized);
-        if (angle < Mathf.Cos(90))
+        if (angle < 0)
         {
             Debug.Log("Activated");
             return true;
@@ -129,7 +219,7 @@ public class Simulator : MonoBehaviour
                 {
                     var unitVelocity = unitComponent.Kinematic.Velocity.normalized;
                     var neighborUnitVelocity = neighborUnitComponent.Kinematic.Velocity.normalized;
-                    if (NearTarget(unit) && Vector3.Dot(unitVelocity, neighborUnitVelocity) < Mathf.Cos(90))
+                    if (NearTarget(unit) && Vector3.Dot(unitVelocity, neighborUnitVelocity) < 0)
                     {
                         return true;
                     }
@@ -177,7 +267,7 @@ public class Simulator : MonoBehaviour
         return false;
     }
 
-    private void DecidePhysicsAction(GameObject unit, UnitComponent unitComponent)
+    private void DecideActivePhysicsAction(GameObject unit, UnitComponent unitComponent)
     {
         if (unitComponent.BasicMovement.Resolved)
         {
@@ -186,9 +276,9 @@ public class Simulator : MonoBehaviour
         else
         {
             var steeringResult = Steering.ArriveBehavior.GetSteering(
-                            unitComponent.Kinematic,
-                            unitComponent.Arrive,
-                            unitComponent.BasicMovement.TargetPosition);
+                unitComponent.Kinematic,
+                unitComponent.Arrive,
+                unitComponent.BasicMovement.TargetPosition);
 
             if (steeringResult != null)
             {
@@ -325,11 +415,25 @@ public class Simulator : MonoBehaviour
         }
     }
 
-
-    // Update is called once per frame
-    void Update()
+    private void OnDrawGizmos()
     {
+        if (Entity != null)
+        {
+            var units = Entity.Fetch(new List<System.Type>()
+            {
+                typeof(UnitComponent)
+            });
 
+            foreach (var unit in units)
+            {
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+                var forward = Quaternion.Euler(0, unitComponent.Kinematic.Orientation, 0) * Vector3.forward;
+                Debug.DrawRay(
+                    unit.transform.position + 0.5f * forward * unitComponent.Radius,
+                    forward * unitComponent.Radius * 0.5f,
+                    Color.red);
+            }
+        }
     }
 }
 
