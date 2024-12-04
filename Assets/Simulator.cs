@@ -131,15 +131,15 @@ public class Simulator : MonoBehaviour
         var neighborUnitComponent = neighbor.GetComponent<UnitComponent>();
         var unitComponent = unit.GetComponent<UnitComponent>();
 
-        var dist = (neighbor.transform.position - unit.transform.position).magnitude;
+        var relativeDir = unit.transform.position - neighbor.transform.position;
+        var dist = relativeDir.magnitude;
         dist -= unitComponent.Radius;
         dist -= neighborUnitComponent.Radius;
         // Add a small offset to prevent "stuttering" due to the impulse force
         // (from resolving collisions) kicking neighbors out of the push influence region
         dist -= 0.025f;
 
-        return dist < Mathf.Epsilon;
-
+        return dist < Mathf.Epsilon && Vector3.Dot(relativeDir, neighborUnitComponent.Kinematic.Velocity) > 0;
     }
 
     private void ResolveCollision(GameObject unit, GameObject neighbor)
@@ -188,10 +188,12 @@ public class Simulator : MonoBehaviour
         }
 
         var currentDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
-        var angle = Vector3.Dot(currentDir.normalized, unitComponent.BasicMovement.RelativeDeltaStart.normalized);
+        var angle = Vector3.Dot(
+            currentDir.normalized,
+            unitComponent.BasicMovement.RelativeDeltaStart.normalized);
+
         if (angle < 0)
         {
-            Debug.Log("Activated");
             return true;
         }
 
