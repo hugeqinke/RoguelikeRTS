@@ -207,7 +207,7 @@ public class InputManager : MonoBehaviour
         foreach (var unit in units)
         {
             var unitComponent = unit.FetchComponent<UnitComponent>();
-            unitComponent.Kinematic.Velocity = Vector3.zero;
+            unitComponent.UpdateVelocity(Vector3.zero);
         }
     }
 

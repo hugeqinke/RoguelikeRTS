@@ -163,6 +163,8 @@ namespace RVO
          */
         internal void buildAgentTree()
         {
+            // TODO: rebuild this only when units are added or removed to the simulation
+
             if (agents_ == null || agents_.Length != Simulator.Instance.agents_.Count)
             {
                 agents_ = new Agent[Simulator.Instance.agents_.Count];

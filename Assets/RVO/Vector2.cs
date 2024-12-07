@@ -59,6 +59,18 @@ namespace RVO
         }
 
         /**
+         * <summary>Constructs a two-dimensional vector from a unity Vector3</summary>
+         *
+         * <param name="v3">The Unity Vector3 vector
+         * </param>
+         */
+        public Vector2(UnityEngine.Vector3 v3)
+        {
+            x_ = v3.x;
+            y_ = v3.z;
+        }
+
+        /**
          * <summary>Returns the string representation of this vector.</summary>
          *
          * <returns>The string representation of this vector.</returns>

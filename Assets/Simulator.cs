@@ -13,20 +13,29 @@ namespace RoguelikeRTS
 
         public InputManager InputManager;
         public static Entity Entity;
+        public static Simulator Instance;
+
+        public RVOProperties RVOProperties;
 
         private void Awake()
         {
             Entity = new Entity();
+            Instance = this;
         }
 
         // Start is called before the first frame update
         void Start()
         {
-            LoadPlayerUnits();
+            SetupEnvironment();
         }
 
-        private void FixedUpdate()
+        private void CategorizeUnits(
+                out List<GameObject> unresolvedUnits,
+                out List<GameObject> resolvedUnits)
         {
+            unresolvedUnits = new List<GameObject>();
+            resolvedUnits = new List<GameObject>();
+
             // Units main processing
             var units = Entity.Fetch(new List<System.Type>()
             {
@@ -36,47 +45,79 @@ namespace RoguelikeRTS
             foreach (var unit in units)
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
+
                 if (InputManager.MoveGroupMap.ContainsKey(unit))
                 {
                     if (!unitComponent.BasicMovement.Resolved)
                     {
-                        var moveGroup = InputManager.MoveGroupMap[unit];
-                        if (TriggerStop(unit, moveGroup))
-                        {
-                            unitComponent.BasicMovement.Resolved = true;
-                        }
-
-                        DecideActivePhysicsAction(unit, unitComponent);
+                        unresolvedUnits.Add(unit);
                     }
                 }
                 else
                 {
-                    DecidePassivePhysicsAction(unit, unitComponent);
+                    resolvedUnits.Add(unit);
                 }
             }
+        }
 
-            // Post processing
-            foreach (var unit in units)
-            {
-                var neighbors = GetNeighbors(unit);
-                // resolve collision
-                foreach (var neighbor in neighbors)
-                {
-                    ResolveCollision(unit, neighbor);
-                }
+        private void FixedUpdate()
+        {
+            // Set unresolved units preferred velocity
+            // Adjust velocity with RVO
+            // Apply velocity and post-processing logic to unresolved units 
 
-                var unitComponent = unit.FetchComponent<UnitComponent>();
-                if (unitComponent.Kinematic.Velocity.sqrMagnitude > Mathf.Epsilon)
-                {
-                    var orientation = MathUtil.NormalizeOrientation(
-                        Vector3.SignedAngle(
-                            Vector3.forward,
-                            unitComponent.Kinematic.Velocity,
-                            Vector3.up));
+            // Calculate and apply velocity to resolved units
+            CategorizeUnits(
+                out List<GameObject> unresolvedUnits,
+                out List<GameObject> resolvedUnits);
 
-                    unitComponent.Kinematic.Orientation = orientation;
-                }
-            }
+            SetPreferredVelocities(unresolvedUnits);
+            ApplyActiveKinematics(unresolvedUnits);
+
+            // foreach (var unit in units)
+            // {
+            //     var unitComponent = unit.FetchCo1ponent<UnitComponent>();
+            //     if (InputManager.MoveGroupMap.ContainsKey(unit))
+            //     {
+            //         if (!unitComponent.BasicMovement.Resolved)
+            //         {
+            //             var moveGroup = InputManager.MoveGroupMap[unit];
+            //             if (TriggerStop(unit, moveGroup))
+            //             {
+            //                 unitComponent.BasicMovement.Resolved = true;
+            //             }
+
+            //             DecideActivePhysicsAction(unit, unitComponent);
+            //         }
+            //     }
+            //     else
+            //     {
+            //         DecidePassivePhysicsAction(unit, unitComponent);
+            //     }
+            // }
+
+            // // Post processing
+            // foreach (var unit in units)
+            // {
+            //     var neighbors = GetNeighbors(unit);
+            //     // resolve collision
+            //     foreach (var neighbor in neighbors)
+            //     {
+            //         ResolveCollision(unit, neighbor);
+            //     }
+
+            //     var unitComponent = unit.FetchComponent<UnitComponent>();
+            //     if (unitComponent.Kinematic.Velocity.sqrMagnitude > Mathf.Epsilon)
+            //     {
+            //         var orientation = MathUtil.NormalizeOrientation(
+            //             Vector3.SignedAngle(
+            //                 Vector3.forward,
+            //                 unitComponent.Kinematic.Velocity,
+            //                 Vector3.up));
+
+            //         unitComponent.Kinematic.Orientation = orientation;
+            //     }
+            // }
         }
 
         private void DecidePassivePhysicsAction(GameObject unit, UnitComponent unitComponent)
@@ -123,7 +164,7 @@ namespace RoguelikeRTS
             }
 
             // match the velocity
-            unitComponent.Kinematic.Velocity = calculatedVelocity;
+            unitComponent.UpdateVelocity(calculatedVelocity);
             unitComponent.Kinematic.Position += unitComponent.Kinematic.Velocity * Time.fixedDeltaTime;
             unit.transform.position = unitComponent.Kinematic.Position;
         }
@@ -241,6 +282,59 @@ namespace RoguelikeRTS
             return false;
         }
 
+        private void ApplyActiveKinematics(List<GameObject> units)
+        {
+            RVO.Simulator.Instance.doStep();
+
+            foreach (var unit in units)
+            {
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+
+                Debug.DrawRay(unit.transform.position, new Vector3(
+                    unitComponent.Agent.prefVelocity_.x_,
+                    0,
+                    unitComponent.Agent.prefVelocity_.y_),
+                    Color.red);
+
+                Debug.DrawRay(unit.transform.position, new Vector3(
+                    unitComponent.Agent.velocity_.x_,
+                    0,
+                    unitComponent.Agent.velocity_.y_),
+                    Color.green);
+
+                if (!unitComponent.BasicMovement.Resolved)
+                {
+                    unitComponent.UpdatePosition(Time.fixedDeltaTime);
+                    unit.transform.position = unitComponent.Kinematic.Position;
+                }
+            }
+        }
+
+        private void SetPreferredVelocities(List<GameObject> units)
+        {
+            foreach (var unit in units)
+            {
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+                var steeringResult = Steering.ArriveBehavior.GetSteering(
+                    unitComponent.Kinematic,
+                    unitComponent.Arrive,
+                    unitComponent.BasicMovement.TargetPosition);
+
+                if (steeringResult != null)
+                {
+                    var velocity = unitComponent.Kinematic.Velocity + steeringResult.Acceleration * Time.fixedDeltaTime;
+                    unitComponent.Agent.prefVelocity_ = new RVO.Vector2(velocity);
+                    // var relativeDir = (unitComponent.BasicMovement.TargetPosition - unit.transform.position).normalized;
+                    // var velocity = relativeDir * unitComponent.Kinematic.SpeedCap;
+                    // unitComponent.Agent.prefVelocity_ = new RVO.Vector2(velocity);
+                }
+                else
+                {
+                    unitComponent.Agent.prefVelocity_ = new RVO.Vector2(0, 0);
+                }
+            }
+        }
+
         private bool ShouldStop(GameObject unit, List<GameObject> neighbors)
         {
             var unitComponent = unit.FetchComponent<UnitComponent>();
@@ -310,7 +404,7 @@ namespace RoguelikeRTS
         {
             var unitComponent = unit.FetchComponent<UnitComponent>();
             unitComponent.BasicMovement.TargetPosition = unit.transform.position;
-            unitComponent.Kinematic.Velocity = Vector3.zero;
+            unitComponent.UpdateVelocity(Vector3.zero);
         }
 
         private bool NearTarget(GameObject unit)
@@ -403,8 +497,9 @@ namespace RoguelikeRTS
             return neighbors;
         }
 
-        private void LoadPlayerUnits()
+        private void SetupEnvironment()
         {
+            // Setup ECS
             var objs = GameObject.FindGameObjectsWithTag(Util.Tags.PlayerUnit);
             foreach (var obj in objs)
             {
@@ -418,6 +513,26 @@ namespace RoguelikeRTS
                 var unitComponent = unit.FetchComponent<UnitComponent>();
                 unitComponent.Kinematic.Position = unit.transform.position;
                 unitComponent.BasicMovement.TargetPosition = unit.transform.position;
+                unitComponent.Agent = RVO.Simulator.Instance.createAgentAdapter(
+                    unit,
+                    new RVO.Vector2(unit.transform.position),
+                    RVOProperties.NeighborRadius,
+                    RVOProperties.MaxNeighbors,
+                    RVOProperties.TimeHorizonAgents,
+                    RVOProperties.TimeHorizonObstacles,
+                    unitComponent.Radius,
+                    unitComponent.Kinematic.SpeedCap,
+                    new RVO.Vector2(unitComponent.Kinematic.Velocity)
+                );
+            }
+
+            // Setup RVO parameters
+            RVO.Simulator.instance_ = new RVO.Simulator();
+            RVO.Simulator.Instance.setTimeStep(Time.fixedDeltaTime);
+            foreach (var unit in units)
+            {
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+                RVO.Simulator.Instance.addAgent(unitComponent.Agent);
             }
         }
 
@@ -450,4 +565,12 @@ namespace RoguelikeRTS
         public bool Arrived;
     }
 
+    [System.Serializable]
+    public class RVOProperties
+    {
+        public float NeighborRadius;
+        public int MaxNeighbors;
+        public float TimeHorizonAgents;
+        public float TimeHorizonObstacles;
+    }
 }

@@ -44,11 +44,11 @@ namespace RVO
         /**
          * <summary>Defines a worker.</summary>
          */
-        private class Worker
+        public class Worker
         {
-            private ManualResetEvent doneEvent_;
-            private int end_;
-            private int start_;
+            protected ManualResetEvent doneEvent_;
+            protected int end_;
+            protected int start_;
 
             /**
              * <summary>Constructs and initializes a worker.</summary>
@@ -69,7 +69,7 @@ namespace RVO
              *
              * <param name="obj">Unused.</param>
              */
-            internal void step(object obj)
+            internal virtual void step(object obj)
             {
                 for (int agentNo = start_; agentNo < end_; ++agentNo)
                 {
@@ -86,7 +86,7 @@ namespace RVO
              *
              * <param name="obj">Unused.</param>
              */
-            internal void update(object obj)
+            internal virtual void update(object obj)
             {
                 for (int agentNo = start_; agentNo < end_; ++agentNo)
                 {
@@ -102,13 +102,12 @@ namespace RVO
         internal KdTree kdTree_;
         internal float timeStep_;
 
-        private static Simulator instance_ = new Simulator();
+        public static Simulator instance_ = new Simulator();
 
         private Agent defaultAgent_;
         private ManualResetEvent[] doneEvents_;
         private Worker[] workers_;
         private int numWorkers_;
-        private float globalTime_;
 
         public static Simulator Instance
         {
@@ -201,6 +200,36 @@ namespace RVO
             return agent.id_;
         }
 
+        public void addAgent(Agent agent)
+        {
+            agents_.Add(agent);
+        }
+
+        public AgentAdapter createAgentAdapter(
+                UnityEngine.GameObject unit,
+                Vector2 position,
+                float neighborDist,
+                int maxNeighbors,
+                float timeHorizon,
+                float timeHorizonObst,
+                float radius,
+                float maxSpeed,
+                Vector2 velocity)
+        {
+            var agent = new AgentAdapter();
+            agent.id_ = agents_.Count;
+            agent.maxNeighbors_ = maxNeighbors;
+            agent.maxSpeed_ = maxSpeed;
+            agent.neighborDist_ = neighborDist;
+            agent.position_ = position;
+            agent.radius_ = radius;
+            agent.timeHorizon_ = timeHorizon;
+            agent.timeHorizonObst_ = timeHorizonObst;
+            agent.velocity_ = velocity;
+            agent.unit_ = unit;
+            return agent;
+        }
+
         /**
          * <summary>Adds a new obstacle to the simulation.</summary>
          *
@@ -267,7 +296,6 @@ namespace RVO
             defaultAgent_ = null;
             kdTree_ = new KdTree();
             obstacles_ = new List<Obstacle>();
-            globalTime_ = 0.0f;
             timeStep_ = 0.1f;
 
             SetNumWorkers(0);
@@ -279,8 +307,9 @@ namespace RVO
          *
          * <returns>The global time after the simulation step.</returns>
          */
-        public float doStep()
+        public void doStep()
         {
+            // TODO: Need a "rebuild" flag everytime a new unit is added or destroyed
             if (workers_ == null)
             {
                 workers_ = new Worker[numWorkers_];
@@ -310,10 +339,6 @@ namespace RVO
             }
 
             WaitHandle.WaitAll(doneEvents_);
-
-            globalTime_ += timeStep_;
-
-            return globalTime_;
         }
 
         /**
@@ -523,17 +548,6 @@ namespace RVO
         public Vector2 getAgentVelocity(int agentNo)
         {
             return agents_[agentNo].velocity_;
-        }
-
-        /**
-         * <summary>Returns the global time of the simulation.</summary>
-         *
-         * <returns>The present global time of the simulation (zero initially).
-         * </returns>
-         */
-        public float getGlobalTime()
-        {
-            return globalTime_;
         }
 
         /**
@@ -826,16 +840,6 @@ namespace RVO
         }
 
         /**
-         * <summary>Sets the global time of the simulation.</summary>
-         *
-         * <param name="globalTime">The global time of the simulation.</param>
-         */
-        public void setGlobalTime(float globalTime)
-        {
-            globalTime_ = globalTime;
-        }
-
-        /**
          * <summary>Sets the number of workers.</summary>
          *
          * <param name="numWorkers">The number of workers.</param>
@@ -866,7 +870,7 @@ namespace RVO
         /**
          * <summary>Constructs and initializes a simulation.</summary>
          */
-        private Simulator()
+        public Simulator()
         {
             Clear();
         }

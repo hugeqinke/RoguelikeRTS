@@ -54,12 +54,12 @@ namespace RVO
         internal float timeHorizon_ = 0.0f;
         internal float timeHorizonObst_ = 0.0f;
 
-        private Vector2 newVelocity_;
+        protected Vector2 newVelocity_;
 
         /**
          * <summary>Computes the neighbors of this agent.</summary>
          */
-        internal void computeNeighbors()
+        internal virtual void computeNeighbors()
         {
             obstacleNeighbors_.Clear();
             float rangeSq = RVOMath.sqr(timeHorizonObst_ * maxSpeed_ + radius_);
@@ -77,7 +77,7 @@ namespace RVO
         /**
          * <summary>Computes the new velocity of this agent.</summary>
          */
-        internal void computeNewVelocity()
+        internal virtual void computeNewVelocity()
         {
             orcaLines_.Clear();
 
@@ -491,7 +491,7 @@ namespace RVO
          * <summary>Updates the two-dimensional position and two-dimensional
          * velocity of this agent.</summary>
          */
-        internal void update()
+        internal virtual void update()
         {
             velocity_ = newVelocity_;
             position_ += velocity_ * Simulator.Instance.timeStep_;
@@ -724,6 +724,78 @@ namespace RVO
                     distance = RVOMath.det(lines[i].direction, lines[i].point - result);
                 }
             }
+        }
+    }
+
+    // Lets us interface with custom code
+    public class AgentAdapter : Agent
+    {
+        public UnityEngine.GameObject unit_;
+        internal new IList<KeyValuePair<float, AgentAdapter>> agentNeighbors_
+            = new List<KeyValuePair<float, AgentAdapter>>();
+
+        /**
+        * <summary>Computes the neighbors of this agent.</summary>
+        */
+        internal override void computeNeighbors()
+        {
+            if (isValid())
+            {
+                obstacleNeighbors_.Clear();
+                float rangeSq = RVOMath.sqr(timeHorizonObst_ * maxSpeed_ + radius_);
+                Simulator.Instance.kdTree_.computeObstacleNeighbors(this, rangeSq);
+
+                agentNeighbors_.Clear();
+
+                if (maxNeighbors_ > 0)
+                {
+                    rangeSq = RVOMath.sqr(neighborDist_);
+                    Simulator.Instance.kdTree_.computeAgentNeighbors(this, ref rangeSq);
+                }
+
+                // filter neighbors
+                var filteredNeighbors = new List<KeyValuePair<float, AgentAdapter>>();
+                var moveGroup = RoguelikeRTS.Simulator.Instance.InputManager.MoveGroupMap[unit_];
+                foreach (var neighbor in agentNeighbors_)
+                {
+                    var neighborAgent = neighbor.Value;
+                    var neighborUnitComponent = neighborAgent.unit_.FetchComponent<UnitComponent>();
+
+                    if (!neighborUnitComponent.BasicMovement.Resolved
+                            && !moveGroup.Units.Contains(neighborAgent.unit_))
+                    {
+                        var kvp = new KeyValuePair<float, AgentAdapter>(neighbor.Key, neighbor.Value);
+                        filteredNeighbors.Add(kvp);
+                    }
+                }
+
+                agentNeighbors_ = filteredNeighbors;
+
+                UnityEngine.Debug.Log(agentNeighbors_.Count);
+            }
+        }
+
+        internal override void computeNewVelocity()
+        {
+            if (isValid())
+            {
+                base.computeNewVelocity();
+            }
+        }
+
+        internal override void update()
+        {
+            if (isValid())
+            {
+                var unitComponent = unit_.FetchComponent<UnitComponent>();
+                unitComponent.UpdateVelocity(newVelocity_);
+            }
+        }
+
+        private bool isValid()
+        {
+            var unitComponent = unit_.FetchComponent<UnitComponent>();
+            return !unitComponent.BasicMovement.Resolved;
         }
     }
 }
