@@ -30,11 +30,11 @@ namespace RoguelikeRTS
         }
 
         private void CategorizeUnits(
-                out List<GameObject> unresolvedUnits,
-                out List<GameObject> resolvedUnits)
+                out HashSet<GameObject> unresolvedUnits,
+                out HashSet<GameObject> resolvedUnits)
         {
-            unresolvedUnits = new List<GameObject>();
-            resolvedUnits = new List<GameObject>();
+            unresolvedUnits = new HashSet<GameObject>();
+            resolvedUnits = new HashSet<GameObject>();
 
             // Units main processing
             var units = Entity.Fetch(new List<System.Type>()
@@ -68,8 +68,8 @@ namespace RoguelikeRTS
 
             // Calculate and apply velocity to resolved units
             CategorizeUnits(
-                out List<GameObject> unresolvedUnits,
-                out List<GameObject> resolvedUnits);
+                out HashSet<GameObject> unresolvedUnits,
+                out HashSet<GameObject> resolvedUnits);
 
             SetPreferredVelocities(unresolvedUnits);
             ApplyActiveKinematics(unresolvedUnits);
@@ -96,28 +96,50 @@ namespace RoguelikeRTS
             //     }
             // }
 
-            // // Post processing
-            // foreach (var unit in units)
-            // {
-            //     var neighbors = GetNeighbors(unit);
-            //     // resolve collision
-            //     foreach (var neighbor in neighbors)
-            //     {
-            //         ResolveCollision(unit, neighbor);
-            //     }
+            var units = Entity.Fetch(new List<System.Type>()
+            {
+                typeof(UnitComponent)
+            });
 
-            //     var unitComponent = unit.FetchComponent<UnitComponent>();
-            //     if (unitComponent.Kinematic.Velocity.sqrMagnitude > Mathf.Epsilon)
-            //     {
-            //         var orientation = MathUtil.NormalizeOrientation(
-            //             Vector3.SignedAngle(
-            //                 Vector3.forward,
-            //                 unitComponent.Kinematic.Velocity,
-            //                 Vector3.up));
+            // Process resolved units
+            foreach (var unit in units)
+            {
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+                if (unitComponent.BasicMovement.Resolved)
+                {
+                    DecidePassivePhysicsAction(unit, unitComponent);
+                }
+                else
+                {
+                    if (TriggerStop(unit, InputManager.MoveGroupMap[unit]))
+                    {
 
-            //         unitComponent.Kinematic.Orientation = orientation;
-            //     }
-            // }
+                    }
+                }
+            }
+
+            // Post processing
+            foreach (var unit in units)
+            {
+                var neighbors = GetNeighbors(unit);
+                // resolve collision
+                foreach (var neighbor in neighbors)
+                {
+                    ResolveCollision(unit, neighbor);
+                }
+
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+                if (unitComponent.Kinematic.Velocity.sqrMagnitude > Mathf.Epsilon)
+                {
+                    var orientation = MathUtil.NormalizeOrientation(
+                        Vector3.SignedAngle(
+                            Vector3.forward,
+                            unitComponent.Kinematic.Velocity,
+                            Vector3.up));
+
+                    unitComponent.Kinematic.Orientation = orientation;
+                }
+            }
         }
 
         private void DecidePassivePhysicsAction(GameObject unit, UnitComponent unitComponent)
@@ -282,26 +304,13 @@ namespace RoguelikeRTS
             return false;
         }
 
-        private void ApplyActiveKinematics(List<GameObject> units)
+        private void ApplyActiveKinematics(HashSet<GameObject> units)
         {
-            RVO.Simulator.Instance.doStep();
+            RVO.Simulator.Instance.doStepCustom();
 
             foreach (var unit in units)
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
-
-                Debug.DrawRay(unit.transform.position, new Vector3(
-                    unitComponent.Agent.prefVelocity_.x_,
-                    0,
-                    unitComponent.Agent.prefVelocity_.y_),
-                    Color.red);
-
-                Debug.DrawRay(unit.transform.position, new Vector3(
-                    unitComponent.Agent.velocity_.x_,
-                    0,
-                    unitComponent.Agent.velocity_.y_),
-                    Color.green);
-
                 if (!unitComponent.BasicMovement.Resolved)
                 {
                     unitComponent.UpdatePosition(Time.fixedDeltaTime);
@@ -310,7 +319,7 @@ namespace RoguelikeRTS
             }
         }
 
-        private void SetPreferredVelocities(List<GameObject> units)
+        private void SetPreferredVelocities(HashSet<GameObject> units)
         {
             foreach (var unit in units)
             {

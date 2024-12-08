@@ -310,6 +310,7 @@ namespace RVO
         public void doStep()
         {
             // TODO: Need a "rebuild" flag everytime a new unit is added or destroyed
+            // NOTE: Using these threads on osX is a fucking performance disaster
             if (workers_ == null)
             {
                 workers_ = new Worker[numWorkers_];
@@ -339,6 +340,34 @@ namespace RVO
             }
 
             WaitHandle.WaitAll(doneEvents_);
+        }
+
+        public void doStepCustom()
+        {
+            kdTree_.buildAgentTree();
+
+            for (int i = 0; i < agents_.Count; i++)
+            {
+                var agent = (AgentAdapter)agents_[i];
+                var unitComponent = agent.unit_.FetchComponent<UnitComponent>();
+
+                if (!unitComponent.BasicMovement.Resolved)
+                {
+                    agent.computeNeighbors();
+                    agent.computeNewVelocity();
+                }
+            }
+
+            for (int i = 0; i < agents_.Count; i++)
+            {
+                var agent = (AgentAdapter)agents_[i];
+                var unitComponent = agent.unit_.FetchComponent<UnitComponent>();
+
+                if (!unitComponent.BasicMovement.Resolved)
+                {
+                    agents_[i].update();
+                }
+            }
         }
 
         /**
@@ -876,3 +905,5 @@ namespace RVO
         }
     }
 }
+
+

@@ -77,7 +77,7 @@ namespace RVO
         /**
          * <summary>Computes the new velocity of this agent.</summary>
          */
-        internal virtual void computeNewVelocity()
+        internal void computeNewVelocity()
         {
             orcaLines_.Clear();
 
@@ -731,71 +731,49 @@ namespace RVO
     public class AgentAdapter : Agent
     {
         public UnityEngine.GameObject unit_;
-        internal new IList<KeyValuePair<float, AgentAdapter>> agentNeighbors_
-            = new List<KeyValuePair<float, AgentAdapter>>();
 
         /**
         * <summary>Computes the neighbors of this agent.</summary>
         */
         internal override void computeNeighbors()
         {
-            if (isValid())
+            obstacleNeighbors_.Clear();
+            float rangeSq = RVOMath.sqr(timeHorizonObst_ * maxSpeed_ + radius_);
+            Simulator.Instance.kdTree_.computeObstacleNeighbors(this, rangeSq);
+
+            agentNeighbors_.Clear();
+
+            if (maxNeighbors_ > 0)
             {
-                obstacleNeighbors_.Clear();
-                float rangeSq = RVOMath.sqr(timeHorizonObst_ * maxSpeed_ + radius_);
-                Simulator.Instance.kdTree_.computeObstacleNeighbors(this, rangeSq);
-
-                agentNeighbors_.Clear();
-
-                if (maxNeighbors_ > 0)
-                {
-                    rangeSq = RVOMath.sqr(neighborDist_);
-                    Simulator.Instance.kdTree_.computeAgentNeighbors(this, ref rangeSq);
-                }
-
-                // filter neighbors
-                var filteredNeighbors = new List<KeyValuePair<float, AgentAdapter>>();
-                var moveGroup = RoguelikeRTS.Simulator.Instance.InputManager.MoveGroupMap[unit_];
-                foreach (var neighbor in agentNeighbors_)
-                {
-                    var neighborAgent = neighbor.Value;
-                    var neighborUnitComponent = neighborAgent.unit_.FetchComponent<UnitComponent>();
-
-                    if (!neighborUnitComponent.BasicMovement.Resolved
-                            && !moveGroup.Units.Contains(neighborAgent.unit_))
-                    {
-                        var kvp = new KeyValuePair<float, AgentAdapter>(neighbor.Key, neighbor.Value);
-                        filteredNeighbors.Add(kvp);
-                    }
-                }
-
-                agentNeighbors_ = filteredNeighbors;
-
-                UnityEngine.Debug.Log(agentNeighbors_.Count);
+                rangeSq = RVOMath.sqr(neighborDist_);
+                Simulator.Instance.kdTree_.computeAgentNeighbors(this, ref rangeSq);
             }
-        }
 
-        internal override void computeNewVelocity()
-        {
-            if (isValid())
+            // filter neighbors
+            var filteredNeighbors = new List<KeyValuePair<float, Agent>>();
+            var moveGroup = RoguelikeRTS.Simulator.Instance.InputManager.MoveGroupMap[unit_];
+            foreach (var neighbor in agentNeighbors_)
             {
-                base.computeNewVelocity();
+                var neighborAgent = (AgentAdapter)neighbor.Value;
+                var neighborUnitComponent = neighborAgent.unit_.FetchComponent<UnitComponent>();
+
+                if (!neighborUnitComponent.BasicMovement.Resolved
+                        && !moveGroup.Units.Contains(neighborAgent.unit_))
+                {
+                    var kvp = new KeyValuePair<float, Agent>(neighbor.Key, neighborAgent);
+                    filteredNeighbors.Add(kvp);
+                }
             }
+
+            agentNeighbors_ = filteredNeighbors;
+
+            UnityEngine.Debug.Log(agentNeighbors_.Count);
         }
 
         internal override void update()
         {
-            if (isValid())
-            {
-                var unitComponent = unit_.FetchComponent<UnitComponent>();
-                unitComponent.UpdateVelocity(newVelocity_);
-            }
-        }
-
-        private bool isValid()
-        {
             var unitComponent = unit_.FetchComponent<UnitComponent>();
-            return !unitComponent.BasicMovement.Resolved;
+            unitComponent.UpdateVelocity(newVelocity_);
         }
     }
 }
