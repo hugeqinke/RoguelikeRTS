@@ -113,7 +113,7 @@ namespace RoguelikeRTS
                 {
                     if (TriggerStop(unit, InputManager.MoveGroupMap[unit]))
                     {
-
+                        unitComponent.BasicMovement.Resolved = true;
                     }
                 }
             }
