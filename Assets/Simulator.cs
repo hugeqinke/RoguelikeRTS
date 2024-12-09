@@ -62,11 +62,7 @@ namespace RoguelikeRTS
 
         private void FixedUpdate()
         {
-            // Set unresolved units preferred velocity
-            // Adjust velocity with RVO
-            // Apply velocity and post-processing logic to unresolved units 
-
-            // Calculate and apply velocity to resolved units
+            // Process unresolved units
             CategorizeUnits(
                 out HashSet<GameObject> unresolvedUnits,
                 out HashSet<GameObject> resolvedUnits);
@@ -74,46 +70,42 @@ namespace RoguelikeRTS
             SetPreferredVelocities(unresolvedUnits);
             ApplyActiveKinematics(unresolvedUnits);
 
-            // foreach (var unit in units)
-            // {
-            //     var unitComponent = unit.FetchCo1ponent<UnitComponent>();
-            //     if (InputManager.MoveGroupMap.ContainsKey(unit))
-            //     {
-            //         if (!unitComponent.BasicMovement.Resolved)
-            //         {
-            //             var moveGroup = InputManager.MoveGroupMap[unit];
-            //             if (TriggerStop(unit, moveGroup))
-            //             {
-            //                 unitComponent.BasicMovement.Resolved = true;
-            //             }
-
-            //             DecideActivePhysicsAction(unit, unitComponent);
-            //         }
-            //     }
-            //     else
-            //     {
-            //         DecidePassivePhysicsAction(unit, unitComponent);
-            //     }
-            // }
-
+            // Process resolved units
             var units = Entity.Fetch(new List<System.Type>()
             {
                 typeof(UnitComponent)
             });
 
-            // Process resolved units
             foreach (var unit in units)
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
                 if (unitComponent.BasicMovement.Resolved)
                 {
-                    DecidePassivePhysicsAction(unit, unitComponent);
-                }
-                else
-                {
-                    if (TriggerStop(unit, InputManager.MoveGroupMap[unit]))
+                    var relativeSqrDst = (unitComponent.BasicMovement.TargetPosition - unit.transform.position).sqrMagnitude;
+                    if (relativeSqrDst > unitComponent.ReturnRadius)
                     {
-                        unitComponent.BasicMovement.Resolved = true;
+                        unitComponent.BasicMovement.Resolved = false;
+
+                        // Clear from old movegroup
+                        if (InputManager.MoveGroupMap.ContainsKey(unit))
+                        {
+                            var oldMoveGroup = InputManager.MoveGroupMap[unit];
+                            if (oldMoveGroup.Units.Contains(unit))
+                            {
+                                oldMoveGroup.Units.Remove(unit);
+                            }
+
+                            InputManager.MoveGroupMap.Remove(unit);
+                        }
+
+                        // Add to new MoveGroup
+                        var moveGroup = new MoveGroup();
+                        moveGroup.Units.Add(unit);
+                        InputManager.MoveGroupMap.Add(unit, moveGroup);
+                    }
+                    else
+                    {
+                        DecidePassivePhysicsAction(unit, unitComponent);
                     }
                 }
             }
@@ -144,7 +136,6 @@ namespace RoguelikeRTS
 
         private void DecidePassivePhysicsAction(GameObject unit, UnitComponent unitComponent)
         {
-            Debug.Log("Triggered");
             var neighbors = GetNeighbors(unit);
 
             // Get nearest colliding neighbor, where the neighbor is moving towards
@@ -311,10 +302,12 @@ namespace RoguelikeRTS
             foreach (var unit in units)
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
-                if (!unitComponent.BasicMovement.Resolved)
+                unitComponent.UpdatePosition(Time.fixedDeltaTime);
+                unit.transform.position = unitComponent.Kinematic.Position;
+
+                if (TriggerStop(unit, InputManager.MoveGroupMap[unit]))
                 {
-                    unitComponent.UpdatePosition(Time.fixedDeltaTime);
-                    unit.transform.position = unitComponent.Kinematic.Position;
+                    unitComponent.BasicMovement.Resolved = true;
                 }
             }
         }

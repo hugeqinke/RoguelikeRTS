@@ -20,6 +20,8 @@ public class UnitComponent : MonoBehaviour, IComponent
     public BasicMovement BasicMovement;
     public RVO.AgentAdapter Agent;
 
+    public float ReturnRadius;
+
     public void UpdateVelocity(RVO.Vector2 velocity)
     {
         Kinematic.Velocity = new Vector3(velocity.x_, 0, velocity.y_);
