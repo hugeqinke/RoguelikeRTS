@@ -79,10 +79,10 @@ namespace RoguelikeRTS
             foreach (var unit in units)
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
-                if (unitComponent.BasicMovement.Resolved)
+                if (unitComponent.BasicMovement.Resolved && !unitComponent.HoldingPosition)
                 {
                     var relativeSqrDst = (unitComponent.BasicMovement.TargetPosition - unit.transform.position).sqrMagnitude;
-                    if (relativeSqrDst > unitComponent.ReturnRadius)
+                    if (relativeSqrDst > unitComponent.ReturnRadius * unitComponent.ReturnRadius)
                     {
                         unitComponent.BasicMovement.Resolved = false;
 
@@ -234,11 +234,20 @@ namespace RoguelikeRTS
                     neighborUnitComponent.Kinematic.Position -= pushVec;
                     neighbor.transform.position = neighborUnitComponent.Kinematic.Position;
                 }
-                else if (unitComponent.BasicMovement.Resolved)
+                else if (neighborUnitComponent.BasicMovement.Resolved && neighborUnitComponent.HoldingPosition)
                 {
                     var dst = Mathf.Sqrt(sqrDst);
 
-                    // var delta = ResponseCoefficient * 0.5f * (thresholdRadius - dst);
+                    var delta = ResponseCoefficient * 0.5f * (thresholdRadius - dst);
+                    var pushVec = relativeDir.normalized * delta;
+
+                    unitComponent.Kinematic.Position += pushVec;
+                    unitComponent.transform.position = unitComponent.Kinematic.Position;
+                }
+                else if (unitComponent.BasicMovement.Resolved && !unitComponent.HoldingPosition)
+                {
+                    var dst = Mathf.Sqrt(sqrDst);
+
                     var delta = ResponseCoefficient * 0.5f * (thresholdRadius - dst);
                     var pushVec = relativeDir.normalized * delta;
 
@@ -307,6 +316,7 @@ namespace RoguelikeRTS
 
                 if (TriggerStop(unit, InputManager.MoveGroupMap[unit]))
                 {
+                    unitComponent.BasicMovement.TargetPosition = unit.transform.position;
                     unitComponent.BasicMovement.Resolved = true;
                 }
             }
@@ -335,38 +345,6 @@ namespace RoguelikeRTS
                     unitComponent.Agent.prefVelocity_ = new RVO.Vector2(0, 0);
                 }
             }
-        }
-
-        private bool ShouldStop(GameObject unit, List<GameObject> neighbors)
-        {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
-            var sqrDst = (unit.transform.position - unitComponent.Kinematic.Position).sqrMagnitude;
-
-            if (ArrivedAtTarget(unit))
-            {
-                return true;
-            }
-
-            var desiredVelocity = (unitComponent.BasicMovement.TargetPosition - unit.transform.position).normalized * unitComponent.Kinematic.SpeedCap;
-
-            foreach (var neighbor in neighbors)
-            {
-                if (IsColliding(unit, neighbor))
-                {
-                    if (NearTarget(unit))
-                    {
-                        return true;
-                    }
-
-                    var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
-                    if (neighborUnitComponent.BasicMovement.Resolved)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
         }
 
         private void DecideActivePhysicsAction(GameObject unit, UnitComponent unitComponent)

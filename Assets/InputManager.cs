@@ -58,6 +58,16 @@ public class InputManager : MonoBehaviour
                 ProcessBoxSelect();
                 break;
         }
+
+        if (Keyboard.current.hKey.wasPressedThisFrame)
+        {
+            // Hold position
+            foreach (var unit in _selectedUnits)
+            {
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+                unitComponent.HoldingPosition = true;
+            }
+        }
     }
 
     private void LateUpdate()
@@ -464,6 +474,7 @@ public class InputManager : MonoBehaviour
                 unitComponent.BasicMovement.TargetPosition = positions[unit];
                 unitComponent.BasicMovement.RelativeDeltaStart = positions[unit] - unit.transform.position;
                 unitComponent.BasicMovement.Resolved = false;
+                unitComponent.HoldingPosition = false;
 
                 var dir = positions[unit] - unit.transform.position;
                 if (dir.sqrMagnitude > Mathf.Epsilon)

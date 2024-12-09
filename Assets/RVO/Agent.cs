@@ -757,8 +757,11 @@ namespace RVO
                 var neighborAgent = (AgentAdapter)neighbor.Value;
                 var neighborUnitComponent = neighborAgent.unit_.FetchComponent<UnitComponent>();
 
-                if (!neighborUnitComponent.BasicMovement.Resolved
-                        && !moveGroup.Units.Contains(neighborAgent.unit_))
+                // Acceptable neighbor types:
+                // - Other moving units who aren't in the same move group
+                // - Stationary units who are holding position
+                if ((!neighborUnitComponent.BasicMovement.Resolved && !moveGroup.Units.Contains(neighborAgent.unit_))
+                    || (neighborUnitComponent.BasicMovement.Resolved && neighborUnitComponent.HoldingPosition))
                 {
                     var kvp = new KeyValuePair<float, Agent>(neighbor.Key, neighborAgent);
                     filteredNeighbors.Add(kvp);
@@ -766,8 +769,6 @@ namespace RVO
             }
 
             agentNeighbors_ = filteredNeighbors;
-
-            UnityEngine.Debug.Log(agentNeighbors_.Count);
         }
 
         internal override void update()

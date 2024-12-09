@@ -20,6 +20,7 @@ public class UnitComponent : MonoBehaviour, IComponent
     public BasicMovement BasicMovement;
     public RVO.AgentAdapter Agent;
 
+    public bool HoldingPosition;
     public float ReturnRadius;
 
     public void UpdateVelocity(RVO.Vector2 velocity)
