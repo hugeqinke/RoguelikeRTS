@@ -28,7 +28,7 @@ public class InputManager : MonoBehaviour
     public BoxRenderer BoxRenderer;
 
     private HashSet<GameObject> _selectedUnits;
-    private InputState CurrentInputState;
+    private InputState _currentInputState;
     private SelectingContext _selectingContext;
     private BoxSelectContext _boxSelectContext;
 
@@ -46,7 +46,7 @@ public class InputManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        switch (CurrentInputState)
+        switch (_currentInputState)
         {
             case InputState.Idle:
                 ProcessIdleState();
@@ -65,7 +65,7 @@ public class InputManager : MonoBehaviour
             foreach (var unit in _selectedUnits)
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
-                unitComponent.HoldingPosition = true;
+                unitComponent.BasicMovement.HoldingPosition = true;
             }
         }
     }
@@ -113,7 +113,7 @@ public class InputManager : MonoBehaviour
             StartPosition = Mouse.current.position.ReadValue()
         };
 
-        CurrentInputState = InputState.Selecting;
+        _currentInputState = InputState.Selecting;
     }
 
     private void ProcessSelectingState()
@@ -144,7 +144,7 @@ public class InputManager : MonoBehaviour
 
     private void EnterIdleState()
     {
-        CurrentInputState = InputState.Idle;
+        _currentInputState = InputState.Idle;
     }
 
     private void ProcessIdleState()
@@ -155,7 +155,6 @@ public class InputManager : MonoBehaviour
         }
         else if (Mouse.current.rightButton.wasPressedThisFrame)
         {
-            Debug.Log("Pressed action");
             IssueOrder();
         }
     }
@@ -173,7 +172,7 @@ public class InputManager : MonoBehaviour
         BoxRenderer.EndPosition = _boxSelectContext.EndPosition;
         BoxRenderer.SetVerticesDirty();
 
-        CurrentInputState = InputState.BoxSelect;
+        _currentInputState = InputState.BoxSelect;
     }
 
     private void ProcessBoxSelect()
@@ -218,6 +217,10 @@ public class InputManager : MonoBehaviour
         {
             var unitComponent = unit.FetchComponent<UnitComponent>();
             unitComponent.UpdateVelocity(Vector3.zero);
+
+            unitComponent.BasicMovement.Resolved = false;
+            unitComponent.BasicMovement.HoldingPosition = false;
+            unitComponent.Target = null;
         }
     }
 
@@ -313,7 +316,6 @@ public class InputManager : MonoBehaviour
         var width = Mathf.Abs(maxWorldPoint.x - minWorldPoint.x);
         var height = Mathf.Abs(maxWorldPoint.z - minWorldPoint.z);
 
-
         if (
             relativeTargetCenter.x <= width
             && relativeTargetCenter.x >= 0
@@ -367,21 +369,15 @@ public class InputManager : MonoBehaviour
         {
             var center = position + trigger.center;
             var radius = unitComponent.transform.localScale.x * trigger.radius;
-            inFrustrum |= OnPositiveHalfPlane(frustrum.LeftPlane, center, radius)
-                        && OnPositiveHalfPlane(frustrum.RightPlane, center, radius)
-                        && OnPositiveHalfPlane(frustrum.BottomPlane, center, radius)
-                        && OnPositiveHalfPlane(frustrum.TopPlane, center, radius)
-                        && OnPositiveHalfPlane(frustrum.FarPlane, center, radius)
-                        && OnPositiveHalfPlane(frustrum.NearPlane, center, radius);
+            inFrustrum |= MathUtil.OnPositiveHalfPlane(frustrum.LeftPlane, center, radius)
+                        && MathUtil.OnPositiveHalfPlane(frustrum.RightPlane, center, radius)
+                        && MathUtil.OnPositiveHalfPlane(frustrum.BottomPlane, center, radius)
+                        && MathUtil.OnPositiveHalfPlane(frustrum.TopPlane, center, radius)
+                        && MathUtil.OnPositiveHalfPlane(frustrum.FarPlane, center, radius)
+                        && MathUtil.OnPositiveHalfPlane(frustrum.NearPlane, center, radius);
         }
 
         return inFrustrum;
-    }
-
-    private bool OnPositiveHalfPlane(MathUtil.Plane plane, Vector3 position, float radius)
-    {
-        var distanceToPlane = Vector3.Dot(plane.Normal, position) - plane.Distance;
-        return distanceToPlane > -radius;
     }
 
     private MathUtil.Frustrum CreateFrustrum()
@@ -450,8 +446,75 @@ public class InputManager : MonoBehaviour
         return frustrum;
     }
 
-    // Helper functions
-    private void IssueOrder()
+    private bool IssueAttackOrder()
+    {
+        ResetKinematics(_selectedUnits);
+
+        var screenPoint = Mouse.current.position.ReadValue();
+        var ray = Camera.main.ScreenPointToRay(screenPoint);
+
+        if (Physics.Raycast(ray, out RaycastHit hit, InputUtils.MaxRaycastDistance, InputUtils.AIUnitLayerMask))
+        {
+            var enemyUnit = hit.collider.gameObject;
+
+            // Set move
+            var positions = CalculateInnerPosition(enemyUnit.transform.position);
+            SetMoveParameters(positions);
+
+            // Set combat
+            foreach (var unit in _selectedUnits)
+            {
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+                unitComponent.Target = enemyUnit;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private void SetMoveParameters(Dictionary<GameObject, Vector3> positions)
+    {
+        var moveGroup = new MoveGroup();
+        foreach (var unit in _selectedUnits)
+        {
+            // Update unit state
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            unitComponent.BasicMovement.TargetPosition = positions[unit];
+            unitComponent.BasicMovement.RelativeDeltaStart = positions[unit] - unit.transform.position;
+
+            var dir = positions[unit] - unit.transform.position;
+            if (dir.sqrMagnitude > Mathf.Epsilon)
+            {
+                unitComponent.Kinematic.Orientation = Vector3.SignedAngle(
+                    Vector3.forward,
+                    dir,
+                    Vector3.up
+                );
+            }
+
+            // Clear from old movegroup
+            if (MoveGroupMap.ContainsKey(unit))
+            {
+                var oldMoveGroup = MoveGroupMap[unit];
+                if (oldMoveGroup.Units.Contains(unit))
+                {
+                    oldMoveGroup.Units.Remove(unit);
+                }
+
+                MoveGroupMap.Remove(unit);
+            }
+
+            // Add to new MoveGroup
+            moveGroup.Units.Add(unit);
+            MoveGroupMap.Add(unit, moveGroup);
+        }
+
+        MoveGroups.Add(moveGroup);
+    }
+
+    private void IssueMoveOrder()
     {
         // Reset the states of all selected units
         ResetKinematics(_selectedUnits);
@@ -462,48 +525,33 @@ public class InputManager : MonoBehaviour
             var point = hitInfo.point;
             point.y = 0;
 
-            // Calculate target positions
-            var positions = CalculateTargetPositions(point);
-
             // Update target positions
-            var moveGroup = new MoveGroup();
-            foreach (var unit in _selectedUnits)
-            {
-                // Update unit state
-                var unitComponent = unit.FetchComponent<UnitComponent>();
-                unitComponent.BasicMovement.TargetPosition = positions[unit];
-                unitComponent.BasicMovement.RelativeDeltaStart = positions[unit] - unit.transform.position;
-                unitComponent.BasicMovement.Resolved = false;
-                unitComponent.HoldingPosition = false;
+            var positions = CalculateTargetPositions(point);
+            SetMoveParameters(positions);
+        }
+    }
 
-                var dir = positions[unit] - unit.transform.position;
-                if (dir.sqrMagnitude > Mathf.Epsilon)
-                {
-                    unitComponent.Kinematic.Orientation = Vector3.SignedAngle(
-                        Vector3.forward,
-                        dir,
-                        Vector3.up
-                    );
-                }
+    private bool RaycastHitEnemyUnit(out GameObject enemyUnit)
+    {
+        var screenPoint = Mouse.current.position.ReadValue();
+        var ray = Camera.main.ScreenPointToRay(screenPoint);
 
-                // Clear from old movegroup
-                if (MoveGroupMap.ContainsKey(unit))
-                {
-                    var oldMoveGroup = MoveGroupMap[unit];
-                    if (oldMoveGroup.Units.Contains(unit))
-                    {
-                        oldMoveGroup.Units.Remove(unit);
-                    }
+        if (Physics.Raycast(ray, out RaycastHit hit, InputUtils.MaxRaycastDistance, InputUtils.AIUnitLayerMask))
+        {
+            enemyUnit = hit.collider.gameObject;
+            return true;
+        }
 
-                    MoveGroupMap.Remove(unit);
-                }
+        enemyUnit = null;
+        return false;
+    }
 
-                // Add to new MoveGroup
-                moveGroup.Units.Add(unit);
-                MoveGroupMap.Add(unit, moveGroup);
-            }
-
-            MoveGroups.Add(moveGroup);
+    // Helper functions
+    private void IssueOrder()
+    {
+        if (!IssueAttackOrder())
+        {
+            IssueMoveOrder();
         }
     }
 
@@ -579,6 +627,20 @@ public static class InputUtils
     }
     private static LayerMask? _groundLayerMask;
 
+    public static LayerMask AIUnitLayerMask
+    {
+        get
+        {
+            if (_aiUnitLayerMask == null)
+            {
+                _aiUnitLayerMask = LayerMask.GetMask(Util.Layers.AIUnit);
+            }
+
+            return _aiUnitLayerMask.Value;
+        }
+    }
+    private static LayerMask? _aiUnitLayerMask;
+
     public static GameObject ScanUnit(Vector3 screenPoint)
     {
         var ray = Camera.main.ScreenPointToRay(screenPoint);
@@ -594,6 +656,12 @@ public static class InputUtils
 
 public static class MathUtil
 {
+    public static bool OnPositiveHalfPlane(MathUtil.Plane plane, Vector3 position, float radius)
+    {
+        var distanceToPlane = Vector3.Dot(plane.Normal, position) - plane.Distance;
+        return distanceToPlane > -radius;
+    }
+
     public static float NormalizeOrientation(float value)
     {
         return NormalizeAngle(value, 0, 360);
@@ -605,6 +673,16 @@ public static class MathUtil
         var offsetValue = value - start;
 
         return (offsetValue - (Mathf.Floor(offsetValue / width) * width)) + start;
+    }
+
+    public static float Determinant2D(Vector3 v1, Vector3 v2)
+    {
+        return v1.x * v2.z - v1.z * v2.x;
+    }
+
+    public static float LeftOf(Vector3 a, Vector3 b, Vector3 c)
+    {
+        return Determinant2D(a - c, b - a);
     }
 
     public class Plane
@@ -635,11 +713,44 @@ public static class Util
     public static class Layers
     {
         public static string PlayerUnitLayer = "PlayerUnit";
+        public static string AIUnit = "AIUnit";
         public static string GroundLayer = "Ground";
     }
 
     public static class Tags
     {
         public static string PlayerUnit = "PlayerUnit";
+    }
+
+    public static void DrawBox(Vector3 pos, Quaternion rot, Vector3 scale, Color c, float duration)
+    {
+        // create matrix
+        Matrix4x4 m = new Matrix4x4();
+        m.SetTRS(pos, rot, scale);
+
+        var point1 = m.MultiplyPoint(new Vector3(-0.5f, -0.5f, 0.5f));
+        var point2 = m.MultiplyPoint(new Vector3(0.5f, -0.5f, 0.5f));
+        var point3 = m.MultiplyPoint(new Vector3(0.5f, -0.5f, -0.5f));
+        var point4 = m.MultiplyPoint(new Vector3(-0.5f, -0.5f, -0.5f));
+
+        var point5 = m.MultiplyPoint(new Vector3(-0.5f, 0.5f, 0.5f));
+        var point6 = m.MultiplyPoint(new Vector3(0.5f, 0.5f, 0.5f));
+        var point7 = m.MultiplyPoint(new Vector3(0.5f, 0.5f, -0.5f));
+        var point8 = m.MultiplyPoint(new Vector3(-0.5f, 0.5f, -0.5f));
+
+        Debug.DrawLine(point1, point2, c, duration);
+        Debug.DrawLine(point2, point3, c, duration);
+        Debug.DrawLine(point3, point4, c, duration);
+        Debug.DrawLine(point4, point1, c, duration);
+
+        Debug.DrawLine(point5, point6, c, duration);
+        Debug.DrawLine(point6, point7, c, duration);
+        Debug.DrawLine(point7, point8, c, duration);
+        Debug.DrawLine(point8, point5, c, duration);
+
+        Debug.DrawLine(point1, point5, c, duration);
+        Debug.DrawLine(point2, point6, c, duration);
+        Debug.DrawLine(point3, point7, c, duration);
+        Debug.DrawLine(point4, point8, c, duration);
     }
 }

@@ -19,9 +19,11 @@ public class UnitComponent : MonoBehaviour, IComponent
     public Kinematic Kinematic;
     public BasicMovement BasicMovement;
     public RVO.AgentAdapter Agent;
+    public Owner Owner;
 
-    public bool HoldingPosition;
-    public float ReturnRadius;
+    public GameObject Target;
+    public float AttackRadius;
+    public bool Attacking;
 
     public void UpdateVelocity(RVO.Vector2 velocity)
     {
@@ -69,4 +71,17 @@ public class BasicMovement
 
     public Vector3 RelativeDeltaStart;
     public bool Resolved = true;
+    public bool HoldingPosition;
+    public float ReturnRadius;
+    public float AvoidScanRadius;
+    public float AvoidFovAngle;
+    public GameObject ResolveBlocking;
+    public float LastMoveTime = Mathf.NegativeInfinity; // Last TimeStep where velocity sqrDist was greater than zero
+    public bool DBG;
+}
+
+public enum Owner
+{
+    Player,
+    AI
 }

@@ -351,7 +351,7 @@ namespace RVO
                 var agent = (AgentAdapter)agents_[i];
                 var unitComponent = agent.unit_.FetchComponent<UnitComponent>();
 
-                if (!unitComponent.BasicMovement.Resolved)
+                if (!unitComponent.BasicMovement.Resolved && !unitComponent.Attacking)
                 {
                     agent.computeNeighbors();
                     agent.computeNewVelocity();
@@ -363,7 +363,7 @@ namespace RVO
                 var agent = (AgentAdapter)agents_[i];
                 var unitComponent = agent.unit_.FetchComponent<UnitComponent>();
 
-                if (!unitComponent.BasicMovement.Resolved)
+                if (!unitComponent.BasicMovement.Resolved && !unitComponent.Attacking)
                 {
                     agents_[i].update();
                 }

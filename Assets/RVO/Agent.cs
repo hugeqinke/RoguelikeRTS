@@ -427,7 +427,7 @@ namespace RVO
          * <param name="agent">A pointer to the agent to be inserted.</param>
          * <param name="rangeSq">The squared range around this agent.</param>
          */
-        internal void insertAgentNeighbor(Agent agent, ref float rangeSq)
+        internal virtual void insertAgentNeighbor(Agent agent, ref float rangeSq)
         {
             if (this != agent)
             {
@@ -752,6 +752,7 @@ namespace RVO
             // filter neighbors
             var filteredNeighbors = new List<KeyValuePair<float, Agent>>();
             var moveGroup = RoguelikeRTS.Simulator.Instance.InputManager.MoveGroupMap[unit_];
+            var unitComponent = unit_.FetchComponent<UnitComponent>();
             foreach (var neighbor in agentNeighbors_)
             {
                 var neighborAgent = (AgentAdapter)neighbor.Value;
@@ -760,8 +761,10 @@ namespace RVO
                 // Acceptable neighbor types:
                 // - Other moving units who aren't in the same move group
                 // - Stationary units who are holding position
+                // - Non-target enemy unit
                 if ((!neighborUnitComponent.BasicMovement.Resolved && !moveGroup.Units.Contains(neighborAgent.unit_))
-                    || (neighborUnitComponent.BasicMovement.Resolved && neighborUnitComponent.HoldingPosition))
+                    || (neighborUnitComponent.BasicMovement.Resolved && neighborUnitComponent.BasicMovement.HoldingPosition)
+                    || (neighborUnitComponent.Owner != unitComponent.Owner))
                 {
                     var kvp = new KeyValuePair<float, Agent>(neighbor.Key, neighborAgent);
                     filteredNeighbors.Add(kvp);
@@ -769,6 +772,70 @@ namespace RVO
             }
 
             agentNeighbors_ = filteredNeighbors;
+        }
+
+        private bool validNeighbor(Agent agent)
+        {
+            // Acceptable neighbors:
+            // - Other moving units who aren't in the same move group
+            // - Stationary units who are holding position
+            // - Non-target enemy unit
+            var neighborAgent = (AgentAdapter)agent;
+
+            var moveGroup = RoguelikeRTS.Simulator.Instance.InputManager.MoveGroupMap[unit_];
+            var unitComponent = unit_.FetchComponent<UnitComponent>();
+            var neighborUnitComponent = neighborAgent.unit_.FetchComponent<UnitComponent>();
+
+            var isDifferentMoveGroup = !neighborUnitComponent.BasicMovement.Resolved
+                && !moveGroup.Units.Contains(neighborAgent.unit_);
+
+            var isHoldingPosition = neighborUnitComponent.BasicMovement.HoldingPosition;
+
+            var isAttackingAlly = neighborUnitComponent.Owner == unitComponent.Owner
+                && neighborUnitComponent.Attacking;
+
+            var isNotTargetEnemy = neighborUnitComponent.Owner != unitComponent.Owner
+                && unitComponent.Target != neighborAgent.unit_;
+
+            return true;
+            // return isHoldingPosition
+            //     || isNotTargetEnemy
+            //     || isAttackingAlly
+            //     || !neighborUnitComponent.BasicMovement.Resolved;
+
+            // return false;
+
+        }
+
+        internal override void insertAgentNeighbor(Agent agent, ref float rangeSq)
+        {
+            if (this != agent)
+            {
+                float distSq = RVOMath.absSq(position_ - agent.position_);
+
+                if (distSq < rangeSq && validNeighbor(agent))
+                {
+                    if (agentNeighbors_.Count < maxNeighbors_)
+                    {
+                        agentNeighbors_.Add(new KeyValuePair<float, Agent>(distSq, agent));
+                    }
+
+                    int i = agentNeighbors_.Count - 1;
+
+                    while (i != 0 && distSq < agentNeighbors_[i - 1].Key)
+                    {
+                        agentNeighbors_[i] = agentNeighbors_[i - 1];
+                        --i;
+                    }
+
+                    agentNeighbors_[i] = new KeyValuePair<float, Agent>(distSq, agent);
+
+                    if (agentNeighbors_.Count == maxNeighbors_)
+                    {
+                        rangeSq = agentNeighbors_[agentNeighbors_.Count - 1].Key;
+                    }
+                }
+            }
         }
 
         internal override void update()

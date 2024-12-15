@@ -17,6 +17,10 @@ namespace RoguelikeRTS
 
         public RVOProperties RVOProperties;
 
+        public int Iterations;
+
+        public List<GameObject> Obstacles;
+
         private void Awake()
         {
             Entity = new Entity();
@@ -60,6 +64,31 @@ namespace RoguelikeRTS
             }
         }
 
+        private void CheckCombatState(HashSet<GameObject> unresolvedUnits)
+        {
+            foreach (var unit in unresolvedUnits)
+            {
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+                unitComponent.Attacking = false;
+
+                if (unitComponent.Target != null)
+                {
+                    var relativeDir = unitComponent.Target.transform.position - unit.transform.position;
+                    var sqrDst = relativeDir.sqrMagnitude;
+                    var targetUnitComponent = unitComponent.Target.FetchComponent<UnitComponent>();
+
+                    var radius = unitComponent.AttackRadius
+                        + unitComponent.Radius
+                        + targetUnitComponent.Radius;
+
+                    if (sqrDst < radius * radius)
+                    {
+                        unitComponent.Attacking = true;
+                    }
+                }
+            }
+        }
+
         private void FixedUpdate()
         {
             // Process unresolved units
@@ -67,6 +96,7 @@ namespace RoguelikeRTS
                 out HashSet<GameObject> unresolvedUnits,
                 out HashSet<GameObject> resolvedUnits);
 
+            CheckCombatState(unresolvedUnits);
             SetPreferredVelocities(unresolvedUnits);
             ApplyActiveKinematics(unresolvedUnits);
 
@@ -79,10 +109,11 @@ namespace RoguelikeRTS
             foreach (var unit in units)
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
-                if (unitComponent.BasicMovement.Resolved && !unitComponent.HoldingPosition)
+                if (unitComponent.BasicMovement.Resolved && !unitComponent.BasicMovement.HoldingPosition)
                 {
                     var relativeSqrDst = (unitComponent.BasicMovement.TargetPosition - unit.transform.position).sqrMagnitude;
-                    if (relativeSqrDst > unitComponent.ReturnRadius * unitComponent.ReturnRadius)
+                    var thresholdSqrRadius = unitComponent.BasicMovement.ReturnRadius * unitComponent.BasicMovement.ReturnRadius;
+                    if (relativeSqrDst > thresholdSqrRadius)
                     {
                         unitComponent.BasicMovement.Resolved = false;
 
@@ -111,15 +142,32 @@ namespace RoguelikeRTS
             }
 
             // Post processing
+            var neighborDictionary = new Dictionary<GameObject, List<GameObject>>();
             foreach (var unit in units)
             {
-                var neighbors = GetNeighbors(unit);
-                // resolve collision
-                foreach (var neighbor in neighbors)
-                {
-                    ResolveCollision(unit, neighbor);
-                }
+                neighborDictionary.Add(unit, GetNeighbors(unit));
 
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+
+                if (unitComponent.Kinematic.Velocity.sqrMagnitude > 0)
+                {
+                    unitComponent.BasicMovement.LastMoveTime = Time.fixedTime;
+                }
+            }
+
+            for (int i = 0; i < Iterations; i++)
+            {
+                foreach (var unit in units)
+                {
+                    foreach (var neighbor in neighborDictionary[unit])
+                    {
+                        ResolveCollision(unit, neighbor);
+                    }
+                }
+            }
+
+            foreach (var unit in units)
+            {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
                 if (unitComponent.Kinematic.Velocity.sqrMagnitude > Mathf.Epsilon)
                 {
@@ -145,15 +193,20 @@ namespace RoguelikeRTS
 
             foreach (var neighbor in neighbors)
             {
+                var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+                if (neighborUnitComponent.Owner != unitComponent.Owner)
+                {
+                    continue;
+                }
+
                 if (InPushRadius(unit, neighbor))
                 {
                     // Calculate how much an "inactive" unit should be pushed
-                    var nearUnitComponent = neighbor.FetchComponent<UnitComponent>();
-                    var relativeDir = unit.transform.position - nearUnitComponent.transform.position;
-                    var appliedVelocity = relativeDir.normalized * nearUnitComponent.Kinematic.Velocity.magnitude;
-                    var velocity = nearUnitComponent.Kinematic.Velocity;
+                    var relativeDir = unit.transform.position - neighborUnitComponent.transform.position;
+                    var appliedVelocity = relativeDir.normalized * neighborUnitComponent.Kinematic.Velocity.magnitude;
+                    var velocity = neighborUnitComponent.Kinematic.Velocity;
 
-                    if (!nearUnitComponent.BasicMovement.Resolved)
+                    if (!neighborUnitComponent.BasicMovement.Resolved)
                     {
                         var angle = Vector3.SignedAngle(velocity, relativeDir, Vector3.up);
                         var angleSign = Mathf.Sign(angle);
@@ -221,36 +274,26 @@ namespace RoguelikeRTS
             // TODO: handle sqrDst <= Mathf.Epsilon case
             if (sqrDst < thresholdRadius * thresholdRadius)
             {
-                if (unitComponent.BasicMovement.Resolved == neighborUnitComponent.BasicMovement.Resolved)
+                var isUnitMoving = unitComponent.Kinematic.Velocity.sqrMagnitude > 0;
+                var isNeighborMoving = neighborUnitComponent.Kinematic.Velocity.sqrMagnitude > 0;
+
+                var bothMoving = isUnitMoving && isNeighborMoving;
+                // Use last move time to prevent pushing units that have been stationary for a while
+                // This is an aesthetic choice
+                // Try playing around with TOI or some other collision resolver on top of the
+                // iterative relaxing I'm doing right now
+                var bothStationary = !isUnitMoving
+                    && !isNeighborMoving
+                    && unitComponent.BasicMovement.LastMoveTime >= neighborUnitComponent.BasicMovement.LastMoveTime;
+                var neighborStationary = isUnitMoving && !isNeighborMoving;
+
+                if (bothMoving || bothStationary || neighborStationary)
                 {
                     var dst = Mathf.Sqrt(sqrDst);
-
                     var delta = ResponseCoefficient * 0.5f * (thresholdRadius - dst);
+
+                    // decide if unit is moving unit or stationary unit
                     var pushVec = relativeDir.normalized * delta;
-
-                    unitComponent.Kinematic.Position += pushVec;
-                    unitComponent.transform.position = unitComponent.Kinematic.Position;
-
-                    neighborUnitComponent.Kinematic.Position -= pushVec;
-                    neighbor.transform.position = neighborUnitComponent.Kinematic.Position;
-                }
-                else if (neighborUnitComponent.BasicMovement.Resolved && neighborUnitComponent.HoldingPosition)
-                {
-                    var dst = Mathf.Sqrt(sqrDst);
-
-                    var delta = ResponseCoefficient * 0.5f * (thresholdRadius - dst);
-                    var pushVec = relativeDir.normalized * delta;
-
-                    unitComponent.Kinematic.Position += pushVec;
-                    unitComponent.transform.position = unitComponent.Kinematic.Position;
-                }
-                else if (unitComponent.BasicMovement.Resolved && !unitComponent.HoldingPosition)
-                {
-                    var dst = Mathf.Sqrt(sqrDst);
-
-                    var delta = ResponseCoefficient * 0.5f * (thresholdRadius - dst);
-                    var pushVec = relativeDir.normalized * delta;
-
                     unitComponent.Kinematic.Position += pushVec;
                     unitComponent.transform.position = unitComponent.Kinematic.Position;
                 }
@@ -266,15 +309,16 @@ namespace RoguelikeRTS
                 return true;
             }
 
-            var currentDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
-            var angle = Vector3.Dot(
-                currentDir.normalized,
-                unitComponent.BasicMovement.RelativeDeltaStart.normalized);
+            // I don't think this check does a whole lot
+            // var currentDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
+            // var angle = Vector3.Dot(
+            //     currentDir.normalized,
+            //     unitComponent.BasicMovement.RelativeDeltaStart.normalized);
 
-            if (angle < 0)
-            {
-                return true;
-            }
+            // if (angle < 0)
+            // {
+            //     return true;
+            // }
 
             var neighbors = GetNeighbors(unit);
             foreach (var neighbor in neighbors)
@@ -283,6 +327,8 @@ namespace RoguelikeRTS
                 {
                     // Handle the case where units are in the same move group
                     // Important subcase 
+                    // - If units of the same group are colliding, near the destination, and going in opposite direction
+                    // - If neighboring unit in same group has reached the destination
                     var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
                     if (IsColliding(unit, neighbor))
                     {
@@ -311,13 +357,23 @@ namespace RoguelikeRTS
             foreach (var unit in units)
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
-                unitComponent.UpdatePosition(Time.fixedDeltaTime);
-                unit.transform.position = unitComponent.Kinematic.Position;
-
-                if (TriggerStop(unit, InputManager.MoveGroupMap[unit]))
+                if (unitComponent.Attacking)
                 {
+                    unitComponent.UpdateVelocity(Vector3.zero);
                     unitComponent.BasicMovement.TargetPosition = unit.transform.position;
-                    unitComponent.BasicMovement.Resolved = true;
+                }
+                else
+                {
+                    if (TriggerStop(unit, InputManager.MoveGroupMap[unit]))
+                    {
+                        unitComponent.BasicMovement.TargetPosition = unit.transform.position;
+                        unitComponent.BasicMovement.Resolved = true;
+                    }
+                    else
+                    {
+                        unitComponent.UpdatePosition(Time.fixedDeltaTime);
+                        unit.transform.position = unitComponent.Kinematic.Position;
+                    }
                 }
             }
         }
@@ -332,19 +388,137 @@ namespace RoguelikeRTS
                     unitComponent.Arrive,
                     unitComponent.BasicMovement.TargetPosition);
 
-                if (steeringResult != null)
+                if (unitComponent.Attacking)
                 {
-                    var velocity = unitComponent.Kinematic.Velocity + steeringResult.Acceleration * Time.fixedDeltaTime;
-                    unitComponent.Agent.prefVelocity_ = new RVO.Vector2(velocity);
-                    // var relativeDir = (unitComponent.BasicMovement.TargetPosition - unit.transform.position).normalized;
-                    // var velocity = relativeDir * unitComponent.Kinematic.SpeedCap;
-                    // unitComponent.Agent.prefVelocity_ = new RVO.Vector2(velocity);
+                    unitComponent.Agent.prefVelocity_ = new RVO.Vector2(0, 0);
+                }
+                else if (steeringResult != null)
+                {
+                    var desiredDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
+                    var sensorDir = Mathf.Min(3f, desiredDir.magnitude) * desiredDir.normalized;
+
+                    var unitStartPosition = unit.transform.position + new Vector3(0, 0.25f, 0);
+                    var layerMask = LayerMask.GetMask(Util.Layers.AIUnit, Util.Layers.PlayerUnitLayer);
+
+                    var rotation = Quaternion.Euler(0, Vector3.SignedAngle(Vector3.forward, sensorDir, Vector3.up), 0);
+
+                    var boxCenter = unitStartPosition + sensorDir * 0.5f;
+                    var boxwidth = unitComponent.Radius * 2;
+                    var boxLength = sensorDir.magnitude;
+                    var boxOverlaps = Physics.OverlapBox(
+                        boxCenter,
+                        new Vector3(boxwidth, 1, boxLength) * 0.5f,
+                        rotation,
+                        layerMask);
+
+                    var circleCenter = unitStartPosition + sensorDir;
+                    var circleOverlaps = Physics.OverlapSphere(
+                        circleCenter,
+                        unitComponent.Radius,
+                        layerMask);
+
+                    var overlaps = new List<Collider>();
+                    foreach (var overlap in boxOverlaps)
+                    {
+                        overlaps.Add(overlap);
+                    }
+                    foreach (var overlap in circleOverlaps)
+                    {
+                        overlaps.Add(overlap);
+                    }
+
+                    // Process overlaps
+                    var blockers = GetBlockers(unit, overlaps); // TODO: this can just be a bool
+                    if (unitComponent.BasicMovement.DBG)
+                    {
+                        Util.DrawBox(boxCenter,
+                            rotation,
+                            new Vector3(boxwidth, 1, boxLength), Color.magenta, 0.1f);
+                        Debug.Log(blockers.Count);
+                    }
+
+                    if (blockers.Count > 0)
+                    {
+                        GameObject nearNeighbor = null;
+                        var nearSqrDst = Mathf.Infinity;
+
+                        foreach (var blocker in blockers)
+                        {
+                            var sqrDst = (blocker.transform.position - unit.transform.position).sqrMagnitude;
+                            if (sqrDst < nearSqrDst)
+                            {
+                                nearSqrDst = sqrDst;
+                                nearNeighbor = blocker;
+                            }
+                        }
+
+                        if (nearNeighbor != null)
+                        {
+                            var sign = MathUtil.LeftOf(unit.transform.position, unit.transform.position + sensorDir, nearNeighbor.transform.position);
+                            var relativeDirection = nearNeighbor.transform.position - unit.transform.position;
+
+                            var clearDir = Quaternion.Euler(0, Mathf.Sign(sign) * 90, 0) * relativeDirection;
+                            clearDir.Normalize();
+
+                            var adjustment = clearDir * (unitComponent.Radius + 0.5f + nearNeighbor.FetchComponent<UnitComponent>().Radius);
+                            var targetPos = nearNeighbor.transform.position + adjustment;
+                            Debug.DrawLine(unit.transform.position, targetPos, Color.black);
+
+                            var velocityDir = (targetPos - unit.transform.position).normalized;
+                            var velocity = velocityDir * unitComponent.Kinematic.SpeedCap;
+                            unitComponent.Agent.prefVelocity_ = new RVO.Vector2(velocity);
+
+                            // Debug.DrawRay(unit.transform.position, adjustment * 5, Color.black);
+                            // Debug.DrawRay(unit.transform.position, velocity * 10, Color.magenta);
+                        }
+                        else
+                        {
+                            var velocity = unitComponent.Kinematic.Velocity + steeringResult.Acceleration * Time.fixedDeltaTime;
+                            unitComponent.Agent.prefVelocity_ = new RVO.Vector2(velocity);
+                        }
+                    }
+                    else
+                    {
+                        // not hits - can go directly towards target
+                        var velocity = unitComponent.Kinematic.Velocity + steeringResult.Acceleration * Time.fixedDeltaTime;
+                        unitComponent.Agent.prefVelocity_ = new RVO.Vector2(velocity);
+                    }
                 }
                 else
                 {
                     unitComponent.Agent.prefVelocity_ = new RVO.Vector2(0, 0);
                 }
             }
+
+            // Debug
+            foreach (var unit in units)
+            {
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+                var dir = new Vector3(
+                    unitComponent.Agent.prefVelocity_.x_,
+                    0,
+                    unitComponent.Agent.prefVelocity_.y_);
+                Debug.DrawRay(unit.transform.position, dir, Color.yellow);
+            }
+        }
+
+        private List<GameObject> GetBlockers(GameObject unit, List<Collider> overlaps)
+        {
+            var blockers = new List<GameObject>();
+            foreach (var overlap in overlaps)
+            {
+                if (overlap.gameObject != unit)
+                {
+                    var unitComponent = overlap.gameObject.FetchComponent<UnitComponent>();
+                    // Ignore if target position is right on this unit
+                    if (unitComponent.BasicMovement.HoldingPosition)
+                    {
+                        blockers.Add(unitComponent.gameObject);
+                    }
+                }
+            }
+
+            return blockers;
         }
 
         private void DecideActivePhysicsAction(GameObject unit, UnitComponent unitComponent)
@@ -368,16 +542,6 @@ namespace RoguelikeRTS
                     unit.transform.position = unitComponent.Kinematic.Position;
                 }
             }
-        }
-
-        private bool InTargetInfluenceRadius(GameObject unit)
-        {
-            var unitComponent = unit.GetComponent<UnitComponent>();
-            var position = unitComponent.Kinematic.Position;
-            var targetPosition = unitComponent.BasicMovement.TargetPosition;
-
-            var radius = TargetInfluenceRadius;
-            return (position - targetPosition).sqrMagnitude <= radius * radius;
         }
 
         private void ForceStop(GameObject unit)
@@ -446,9 +610,9 @@ namespace RoguelikeRTS
         private List<GameObject> GetNeighbors(GameObject unit)
         {
             var units = Entity.Fetch(new List<System.Type>()
-        {
-            typeof(UnitComponent)
-        });
+            {
+                typeof(UnitComponent)
+            });
 
             var unitComponent = unit.FetchComponent<UnitComponent>();
             var unitRadius = unitComponent.Radius;
@@ -514,6 +678,27 @@ namespace RoguelikeRTS
                 var unitComponent = unit.FetchComponent<UnitComponent>();
                 RVO.Simulator.Instance.addAgent(unitComponent.Agent);
             }
+
+            foreach (var obstacle in Obstacles)
+            {
+                var vertices = new List<Vector3>()
+                {
+                    obstacle.transform.position + Vector3.right * obstacle.transform.localScale.x * 0.5f,
+                    obstacle.transform.position + Vector3.forward * obstacle.transform.localScale.x * 0.5f,
+                    obstacle.transform.position + Vector3.left * obstacle.transform.localScale.x * 0.5f,
+                    obstacle.transform.position + Vector3.back * obstacle.transform.localScale.x * 0.5f,
+                };
+
+                var vertices2D = new List<RVO.Vector2>();
+                foreach (var vertex in vertices)
+                {
+                    vertices2D.Add(new RVO.Vector2(vertex));
+                }
+
+                Debug.Log(RVO.Simulator.Instance.addObstacle(vertices2D));
+            }
+
+            RVO.Simulator.Instance.kdTree_.buildObstacleTree();
         }
 
         private void OnDrawGizmos()
