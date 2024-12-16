@@ -715,6 +715,15 @@ public static class Util
         public static string PlayerUnitLayer = "PlayerUnit";
         public static string AIUnit = "AIUnit";
         public static string GroundLayer = "Ground";
+
+        private static LayerMask _playerAndAIUnitMask;
+        public static LayerMask PlayerAndAIUnitMask
+        {
+            get
+            {
+                return LayerMask.GetMask(PlayerUnitLayer, AIUnit);
+            }
+        }
     }
 
     public static class Tags

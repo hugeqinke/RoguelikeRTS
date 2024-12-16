@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 namespace RoguelikeRTS
 {
@@ -16,10 +17,11 @@ namespace RoguelikeRTS
         public static Simulator Instance;
 
         public RVOProperties RVOProperties;
-
         public int Iterations;
-
         public List<GameObject> Obstacles;
+
+        public float MovingNeighborRadius;
+        private static float rotateAmount = 30f;
 
         private void Awake()
         {
@@ -89,27 +91,12 @@ namespace RoguelikeRTS
             }
         }
 
-        private void FixedUpdate()
+        private void ProcessResolvedUnits(HashSet<GameObject> units)
         {
-            // Process unresolved units
-            CategorizeUnits(
-                out HashSet<GameObject> unresolvedUnits,
-                out HashSet<GameObject> resolvedUnits);
-
-            CheckCombatState(unresolvedUnits);
-            SetPreferredVelocities(unresolvedUnits);
-            ApplyActiveKinematics(unresolvedUnits);
-
-            // Process resolved units
-            var units = Entity.Fetch(new List<System.Type>()
-            {
-                typeof(UnitComponent)
-            });
-
             foreach (var unit in units)
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
-                if (unitComponent.BasicMovement.Resolved && !unitComponent.BasicMovement.HoldingPosition)
+                if (!unitComponent.BasicMovement.HoldingPosition)
                 {
                     var relativeSqrDst = (unitComponent.BasicMovement.TargetPosition - unit.transform.position).sqrMagnitude;
                     var thresholdSqrRadius = unitComponent.BasicMovement.ReturnRadius * unitComponent.BasicMovement.ReturnRadius;
@@ -140,8 +127,262 @@ namespace RoguelikeRTS
                     }
                 }
             }
+        }
+
+        private int ChooseSign(GameObject unit, GameObject neighbor)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+            var desiredDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
+
+            var relativeDir = (unit.transform.position - neighbor.transform.position).normalized;
+            var rightDir = Quaternion.Euler(0, rotateAmount, 0) * relativeDir;
+            var rightTarget = neighbor.transform.position + rightDir * (neighborUnitComponent.Radius + 2 * unitComponent.Radius);
+            var desiredRight = rightTarget - unit.transform.position;
+            var rightProj = Vector3.Project(desiredRight, desiredDir);
+            var rightRej = rightProj - desiredRight;
+
+            var leftDir = Quaternion.Euler(0, -rotateAmount, 0) * relativeDir;
+            var leftTarget = neighbor.transform.position + leftDir * (neighborUnitComponent.Radius + 2 * unitComponent.Radius);
+            var desiredLeft = leftTarget - unit.transform.position;
+            var leftProj = Vector3.Project(desiredLeft, desiredDir);
+            var leftRej = leftProj - desiredLeft;
+
+            if (rightRej.sqrMagnitude < leftRej.sqrMagnitude)
+            {
+                return 1;
+            }
+
+            return -1;
+        }
+
+        private List<GameObject> ClearPath(GameObject unit)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var range = unitComponent.Radius + unitComponent.Kinematic.SpeedCap * unitComponent.BasicMovement.TimeHorizon;
+            var overlaps = Physics.OverlapSphere(unit.transform.position, range, Util.Layers.PlayerAndAIUnitMask);
+
+            var desiredDir = unitComponent.BasicMovement.TargetPosition - unitComponent.transform.position;
+            var rotation = Quaternion.Euler(0, Vector3.SignedAngle(Vector3.forward, desiredDir, Vector3.up), 0);
+            var forward = rotation * Vector3.forward;
+
+            var leftPoint = unit.transform.position + (unitComponent.Radius) * (rotation * Vector3.left);
+            var leftPlane = new MathUtil.Plane(Vector3.Cross(Vector3.up, forward), leftPoint);
+
+            var rightPoint = unit.transform.position + (unitComponent.Radius) * (rotation * Vector3.right);
+            var rightPlane = new MathUtil.Plane(Vector3.Cross(forward, Vector3.up), rightPoint);
+
+            var backPlane = new MathUtil.Plane(forward, unit.transform.position);
+
+            var units = new List<GameObject>();
+            foreach (var overlap in overlaps)
+            {
+                if (overlap.gameObject != unit)
+                {
+                    var overlapUnitComponent = overlap.gameObject.FetchComponent<UnitComponent>();
+                    if (
+                        MathUtil.OnPositiveHalfPlane(leftPlane, overlap.gameObject.transform.position, overlapUnitComponent.Radius)
+                        && MathUtil.OnPositiveHalfPlane(rightPlane, overlap.gameObject.transform.position, overlapUnitComponent.Radius)
+                        && MathUtil.OnPositiveHalfPlane(backPlane, overlap.gameObject.transform.position, overlapUnitComponent.Radius))
+                    {
+                        var avoidanceType = GetAvoidanceType(overlap.gameObject);
+
+                        if (avoidanceType == AvoidanceType.Stationary)
+                        {
+                            units.Add(overlap.gameObject);
+                        }
+                        else
+                        {
+                            var sqrDst = (overlap.gameObject.transform.position - unit.transform.position).sqrMagnitude;
+                            var radius = MovingNeighborRadius + unitComponent.Radius + overlapUnitComponent.Radius;
+                            if (sqrDst < radius * radius)
+                            {
+                                units.Add(overlap.gameObject);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return units;
+        }
+
+        private bool IsHeadOn(GameObject unit, GameObject neighbor)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var neighborComponent = neighbor.FetchComponent<UnitComponent>();
+
+            var unitPreferredDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
+            var neighborPreferredDir = neighborComponent.BasicMovement.TargetPosition - neighbor.transform.position;
+
+            var angle = Vector3.Angle(unitPreferredDir, -neighborPreferredDir);
+            if (angle < 90)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ProcessUnresolvedUnits(HashSet<GameObject> units)
+        {
+            // Calculate preferred velocities
+            foreach (var unit in units)
+            {
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+                var dir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
+                unitComponent.Kinematic.PreferredVelocity = dir.normalized * unitComponent.Kinematic.SpeedCap;
+            }
+
+            foreach (var unit in units)
+            {
+                // check for free path
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+
+                var preferredDir = unitComponent.Kinematic.PreferredVelocity.normalized;
+
+                var neighbors = ClearPath(unit);
+
+                if (neighbors.Count > 0)
+                {
+                    // choose nearest valid neighbor
+                    // filter neighbors where target 
+                    GameObject nearNeighbor = null;
+                    var nearSqrDst = Mathf.Infinity;
+                    var avoidancePriority = -1;
+
+                    foreach (var neighbor in neighbors)
+                    {
+                        var dir = unit.transform.position - neighbor.transform.position;
+                        var sqrDst = dir.sqrMagnitude;
+
+                        var relativeDir = unit.transform.position - neighbor.transform.position;
+                        var plane = new MathUtil.Plane(relativeDir, neighbor.transform.position);
+                        var avoidanceType = GetAvoidanceType(neighbor);
+
+                        // Test if same group or going towards the same direction
+                        var sameGroup = false;
+                        if (InputManager.MoveGroupMap.ContainsKey(neighbor) && InputManager.MoveGroupMap.ContainsKey(unit))
+                        {
+                            sameGroup = InputManager.MoveGroupMap[neighbor] == InputManager.MoveGroupMap[unit];
+                        }
+
+                        var sameDirection = false;
+                        var unitDesiredDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
+                        var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+                        var neighborDesiredDir = neighborUnitComponent.BasicMovement.TargetPosition - neighbor.transform.position;
+
+                        if (neighborDesiredDir.sqrMagnitude > Mathf.Epsilon)
+                        {
+                            if (Vector3.Angle(unitDesiredDir, neighborDesiredDir) < 30)
+                            {
+                                sameDirection = true;
+                            }
+                        }
+
+                        if (sqrDst < nearSqrDst
+                            && !MathUtil.OnPositiveHalfPlane(plane, unitComponent.BasicMovement.TargetPosition, 0)
+                            && (int)avoidanceType >= avoidancePriority
+                            && !sameGroup && !sameDirection)
+                        {
+                            nearSqrDst = sqrDst;
+                            nearNeighbor = neighbor;
+                            avoidancePriority = (int)avoidanceType;
+                        }
+                    }
+
+                    if (nearNeighbor != null)
+                    {
+                        var avoidanceType = GetAvoidanceType(nearNeighbor);
+                        var nearNeighborUnitComponent = nearNeighbor.FetchComponent<UnitComponent>();
+                        if (avoidanceType == AvoidanceType.Moving)
+                        {
+                            if (IsHeadOn(unit, nearNeighbor))
+                            {
+                                if (nearNeighborUnitComponent.BasicMovement.SidePreference != 0 && unitComponent.BasicMovement.SidePreference != nearNeighborUnitComponent.BasicMovement.SidePreference)
+                                {
+                                    unitComponent.BasicMovement.SidePreference = nearNeighborUnitComponent.BasicMovement.SidePreference;
+                                }
+                                else if (nearNeighborUnitComponent.BasicMovement.SidePreference == 0 && unitComponent.BasicMovement.SidePreference == 0)
+                                {
+                                    unitComponent.BasicMovement.SidePreference = ChooseSign(unit, nearNeighbor);
+                                }
+                            }
+                            else
+                            {
+                                unitComponent.BasicMovement.SidePreference = ChooseSign(unit, nearNeighbor);
+                            }
+                        }
+                        else
+                        {
+                            if (unitComponent.BasicMovement.SidePreference == 0)
+                            {
+                                unitComponent.BasicMovement.SidePreference = ChooseSign(unit, nearNeighbor);
+                            }
+                        }
+
+                        var relativeDir = (unit.transform.position - nearNeighbor.transform.position).normalized;
+                        relativeDir = Quaternion.Euler(
+                            0,
+                            unitComponent.BasicMovement.SidePreference * rotateAmount,
+                            0) * relativeDir;
+
+                        var target = nearNeighbor.transform.position + relativeDir * (nearNeighborUnitComponent.Radius + 2 * unitComponent.Radius);
+                        Debug.DrawLine(nearNeighbor.transform.position, target, Color.cyan);
+
+                        var desiredDir = (target - unit.transform.position).normalized;
+                        unitComponent.Kinematic.PreferredVelocity = desiredDir * unitComponent.Kinematic.SpeedCap;
+                        Debug.DrawRay(unit.transform.position, desiredDir * unitComponent.Kinematic.SpeedCap, Color.yellow);
+                    }
+                }
+                else
+                {
+                    if (unitComponent.BasicMovement.DBG)
+                    {
+                        Debug.Log("Testing");
+                    }
+                    unitComponent.BasicMovement.SidePreference = 0;
+                }
+
+                Debug.DrawRay(unit.transform.position, preferredDir * 5, Color.blue);
+            }
+
+            foreach (var unit in units)
+            {
+                var unitComponent = unit.FetchComponent<UnitComponent>();
+                unitComponent.Kinematic.Velocity = unitComponent.Kinematic.PreferredVelocity;
+                // compute new position
+                var delta = unitComponent.Kinematic.Velocity * Time.fixedDeltaTime;
+                var dir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
+                if (dir.magnitude < delta.magnitude)
+                {
+                    delta = unitComponent.Kinematic.Velocity.normalized * dir.magnitude;
+                }
+
+                Debug.Log(unitComponent.Kinematic.Velocity.magnitude);
+
+                unitComponent.Kinematic.Position += delta;
+                unit.transform.position = unitComponent.Kinematic.Position;
+            }
+        }
+
+        private void FixedUpdate()
+        {
+            // Process unresolved units
+            CategorizeUnits(
+                out HashSet<GameObject> unresolvedUnits,
+                out HashSet<GameObject> resolvedUnits);
+
+            // CheckCombatState(unresolvedUnits);
+            ProcessUnresolvedUnits(unresolvedUnits);
+            // ProcessResolvedUnits(resolvedUnits);
 
             // Post processing
+            var units = Entity.Fetch(new List<System.Type>()
+            {
+                typeof (UnitComponent)
+            });
+
             var neighborDictionary = new Dictionary<GameObject, List<GameObject>>();
             foreach (var unit in units)
             {
@@ -350,158 +591,6 @@ namespace RoguelikeRTS
             return false;
         }
 
-        private void ApplyActiveKinematics(HashSet<GameObject> units)
-        {
-            RVO.Simulator.Instance.doStepCustom();
-
-            foreach (var unit in units)
-            {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
-                if (unitComponent.Attacking)
-                {
-                    unitComponent.UpdateVelocity(Vector3.zero);
-                    unitComponent.BasicMovement.TargetPosition = unit.transform.position;
-                }
-                else
-                {
-                    if (TriggerStop(unit, InputManager.MoveGroupMap[unit]))
-                    {
-                        unitComponent.BasicMovement.TargetPosition = unit.transform.position;
-                        unitComponent.BasicMovement.Resolved = true;
-                    }
-                    else
-                    {
-                        unitComponent.UpdatePosition(Time.fixedDeltaTime);
-                        unit.transform.position = unitComponent.Kinematic.Position;
-                    }
-                }
-            }
-        }
-
-        private void SetPreferredVelocities(HashSet<GameObject> units)
-        {
-            foreach (var unit in units)
-            {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
-                var steeringResult = Steering.ArriveBehavior.GetSteering(
-                    unitComponent.Kinematic,
-                    unitComponent.Arrive,
-                    unitComponent.BasicMovement.TargetPosition);
-
-                if (unitComponent.Attacking)
-                {
-                    unitComponent.Agent.prefVelocity_ = new RVO.Vector2(0, 0);
-                }
-                else if (steeringResult != null)
-                {
-                    var desiredDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
-                    var sensorDir = Mathf.Min(3f, desiredDir.magnitude) * desiredDir.normalized;
-
-                    var unitStartPosition = unit.transform.position + new Vector3(0, 0.25f, 0);
-                    var layerMask = LayerMask.GetMask(Util.Layers.AIUnit, Util.Layers.PlayerUnitLayer);
-
-                    var rotation = Quaternion.Euler(0, Vector3.SignedAngle(Vector3.forward, sensorDir, Vector3.up), 0);
-
-                    var boxCenter = unitStartPosition + sensorDir * 0.5f;
-                    var boxwidth = unitComponent.Radius * 2;
-                    var boxLength = sensorDir.magnitude;
-                    var boxOverlaps = Physics.OverlapBox(
-                        boxCenter,
-                        new Vector3(boxwidth, 1, boxLength) * 0.5f,
-                        rotation,
-                        layerMask);
-
-                    var circleCenter = unitStartPosition + sensorDir;
-                    var circleOverlaps = Physics.OverlapSphere(
-                        circleCenter,
-                        unitComponent.Radius,
-                        layerMask);
-
-                    var overlaps = new List<Collider>();
-                    foreach (var overlap in boxOverlaps)
-                    {
-                        overlaps.Add(overlap);
-                    }
-                    foreach (var overlap in circleOverlaps)
-                    {
-                        overlaps.Add(overlap);
-                    }
-
-                    // Process overlaps
-                    var blockers = GetBlockers(unit, overlaps); // TODO: this can just be a bool
-                    if (unitComponent.BasicMovement.DBG)
-                    {
-                        Util.DrawBox(boxCenter,
-                            rotation,
-                            new Vector3(boxwidth, 1, boxLength), Color.magenta, 0.1f);
-                        Debug.Log(blockers.Count);
-                    }
-
-                    if (blockers.Count > 0)
-                    {
-                        GameObject nearNeighbor = null;
-                        var nearSqrDst = Mathf.Infinity;
-
-                        foreach (var blocker in blockers)
-                        {
-                            var sqrDst = (blocker.transform.position - unit.transform.position).sqrMagnitude;
-                            if (sqrDst < nearSqrDst)
-                            {
-                                nearSqrDst = sqrDst;
-                                nearNeighbor = blocker;
-                            }
-                        }
-
-                        if (nearNeighbor != null)
-                        {
-                            var sign = MathUtil.LeftOf(unit.transform.position, unit.transform.position + sensorDir, nearNeighbor.transform.position);
-                            var relativeDirection = nearNeighbor.transform.position - unit.transform.position;
-
-                            var clearDir = Quaternion.Euler(0, Mathf.Sign(sign) * 90, 0) * relativeDirection;
-                            clearDir.Normalize();
-
-                            var adjustment = clearDir * (unitComponent.Radius + 0.5f + nearNeighbor.FetchComponent<UnitComponent>().Radius);
-                            var targetPos = nearNeighbor.transform.position + adjustment;
-                            Debug.DrawLine(unit.transform.position, targetPos, Color.black);
-
-                            var velocityDir = (targetPos - unit.transform.position).normalized;
-                            var velocity = velocityDir * unitComponent.Kinematic.SpeedCap;
-                            unitComponent.Agent.prefVelocity_ = new RVO.Vector2(velocity);
-
-                            // Debug.DrawRay(unit.transform.position, adjustment * 5, Color.black);
-                            // Debug.DrawRay(unit.transform.position, velocity * 10, Color.magenta);
-                        }
-                        else
-                        {
-                            var velocity = unitComponent.Kinematic.Velocity + steeringResult.Acceleration * Time.fixedDeltaTime;
-                            unitComponent.Agent.prefVelocity_ = new RVO.Vector2(velocity);
-                        }
-                    }
-                    else
-                    {
-                        // not hits - can go directly towards target
-                        var velocity = unitComponent.Kinematic.Velocity + steeringResult.Acceleration * Time.fixedDeltaTime;
-                        unitComponent.Agent.prefVelocity_ = new RVO.Vector2(velocity);
-                    }
-                }
-                else
-                {
-                    unitComponent.Agent.prefVelocity_ = new RVO.Vector2(0, 0);
-                }
-            }
-
-            // Debug
-            foreach (var unit in units)
-            {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
-                var dir = new Vector3(
-                    unitComponent.Agent.prefVelocity_.x_,
-                    0,
-                    unitComponent.Agent.prefVelocity_.y_);
-                Debug.DrawRay(unit.transform.position, dir, Color.yellow);
-            }
-        }
-
         private List<GameObject> GetBlockers(GameObject unit, List<Collider> overlaps)
         {
             var blockers = new List<GameObject>();
@@ -678,27 +767,6 @@ namespace RoguelikeRTS
                 var unitComponent = unit.FetchComponent<UnitComponent>();
                 RVO.Simulator.Instance.addAgent(unitComponent.Agent);
             }
-
-            foreach (var obstacle in Obstacles)
-            {
-                var vertices = new List<Vector3>()
-                {
-                    obstacle.transform.position + Vector3.right * obstacle.transform.localScale.x * 0.5f,
-                    obstacle.transform.position + Vector3.forward * obstacle.transform.localScale.x * 0.5f,
-                    obstacle.transform.position + Vector3.left * obstacle.transform.localScale.x * 0.5f,
-                    obstacle.transform.position + Vector3.back * obstacle.transform.localScale.x * 0.5f,
-                };
-
-                var vertices2D = new List<RVO.Vector2>();
-                foreach (var vertex in vertices)
-                {
-                    vertices2D.Add(new RVO.Vector2(vertex));
-                }
-
-                Debug.Log(RVO.Simulator.Instance.addObstacle(vertices2D));
-            }
-
-            RVO.Simulator.Instance.kdTree_.buildObstacleTree();
         }
 
         private void OnDrawGizmos()
@@ -721,6 +789,25 @@ namespace RoguelikeRTS
                 }
             }
         }
+
+        private AvoidanceType GetAvoidanceType(GameObject unit)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            if (unitComponent.Kinematic.Velocity.sqrMagnitude > 0)
+            {
+                return AvoidanceType.Moving;
+            }
+            else
+            {
+                return AvoidanceType.Stationary;
+            }
+        }
+    }
+
+    public enum AvoidanceType
+    {
+        Stationary,
+        Moving
     }
 
     public class UnitState

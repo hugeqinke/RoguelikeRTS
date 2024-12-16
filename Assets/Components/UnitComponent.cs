@@ -57,6 +57,7 @@ public class Kinematic
 {
     public float SpeedCap;
     public float AccelerationCap;
+    public Vector3 PreferredVelocity;
 
     [ReadOnly] public Vector3 Velocity;
     [ReadOnly] public Vector3 Position;
@@ -73,11 +74,18 @@ public class BasicMovement
     public bool Resolved = true;
     public bool HoldingPosition;
     public float ReturnRadius;
-    public float AvoidScanRadius;
-    public float AvoidFovAngle;
-    public GameObject ResolveBlocking;
     public float LastMoveTime = Mathf.NegativeInfinity; // Last TimeStep where velocity sqrDist was greater than zero
     public bool DBG;
+
+    // Avoidance
+    public float TimeHorizon;
+
+    /* Side preference key:
+       -1 -> left
+        0 -> none
+        1 -> right        
+    */
+    public int SidePreference;
 }
 
 public enum Owner
