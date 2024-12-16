@@ -52,12 +52,9 @@ namespace RoguelikeRTS
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
 
-                if (InputManager.MoveGroupMap.ContainsKey(unit))
+                if (!unitComponent.BasicMovement.Resolved)
                 {
-                    if (!unitComponent.BasicMovement.Resolved)
-                    {
-                        unresolvedUnits.Add(unit);
-                    }
+                    unresolvedUnits.Add(unit);
                 }
                 else
                 {
@@ -303,7 +300,8 @@ namespace RoguelikeRTS
                         if (sqrDst < nearSqrDst
                             && !MathUtil.OnPositiveHalfPlane(plane, unitComponent.BasicMovement.TargetPosition, 0)
                             && (int)avoidanceType >= avoidancePriority
-                            && !sameGroup && !sameDirection)
+                            && !sameGroup && !sameDirection
+                            && !neighborUnitComponent.BasicMovement.Resolved)
                         {
                             nearSqrDst = sqrDst;
                             nearNeighbor = neighbor;
@@ -354,24 +352,19 @@ namespace RoguelikeRTS
                                 0) * relativeDir;
 
                             var target = nearNeighbor.transform.position + relativeDir * (nearNeighborUnitComponent.Radius + 2 * unitComponent.Radius);
-                            Debug.DrawLine(nearNeighbor.transform.position, target, Color.cyan);
-
                             var desiredDir = (target - unit.transform.position).normalized;
                             unitComponent.Kinematic.PreferredVelocity = desiredDir * unitComponent.Kinematic.SpeedCap;
-                            Debug.DrawRay(unit.transform.position, desiredDir * unitComponent.Kinematic.SpeedCap, Color.yellow);
+                            // Debug.DrawLine(nearNeighbor.transform.position, target, Color.cyan);
+                            // Debug.DrawRay(unit.transform.position, desiredDir * unitComponent.Kinematic.SpeedCap, Color.yellow);
                         }
                     }
                 }
                 else
                 {
-                    if (unitComponent.BasicMovement.DBG)
-                    {
-                        Debug.Log("Testing");
-                    }
                     unitComponent.BasicMovement.SidePreference = 0;
                 }
 
-                Debug.DrawRay(unit.transform.position, preferredDir * 5, Color.blue);
+                // Debug.DrawRay(unit.transform.position, preferredDir * 5, Color.blue);
             }
 
             foreach (var unit in units)
@@ -386,10 +379,16 @@ namespace RoguelikeRTS
                     delta = unitComponent.Kinematic.Velocity.normalized * dir.magnitude;
                 }
 
-                Debug.Log(unitComponent.Kinematic.Velocity.magnitude);
+                // Debug.Log(unitComponent.Kinematic.Velocity.magnitude);
 
                 unitComponent.Kinematic.Position += delta;
                 unit.transform.position = unitComponent.Kinematic.Position;
+
+                if (TriggerStop(unit, InputManager.MoveGroupMap[unit]))
+                {
+                    ForceStop(unit);
+                    unitComponent.BasicMovement.Resolved = true;
+                }
             }
         }
 
@@ -402,7 +401,7 @@ namespace RoguelikeRTS
 
             // CheckCombatState(unresolvedUnits);
             ProcessUnresolvedUnits(unresolvedUnits);
-            // ProcessResolvedUnits(resolvedUnits);
+            ProcessResolvedUnits(resolvedUnits);
 
             // Post processing
             var units = Entity.Fetch(new List<System.Type>()
@@ -465,6 +464,11 @@ namespace RoguelikeRTS
                 if (neighborUnitComponent.Owner != unitComponent.Owner)
                 {
                     continue;
+                }
+
+                if (unitComponent.BasicMovement.DBG)
+                {
+                    Debug.Log("Testmp");
                 }
 
                 if (InPushRadius(unit, neighbor))
