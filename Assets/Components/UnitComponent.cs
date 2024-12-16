@@ -18,31 +18,11 @@ public class UnitComponent : MonoBehaviour, IComponent
     public Arrive Arrive;
     public Kinematic Kinematic;
     public BasicMovement BasicMovement;
-    public RVO.AgentAdapter Agent;
     public Owner Owner;
 
     public GameObject Target;
     public float AttackRadius;
     public bool Attacking;
-
-    public void UpdateVelocity(RVO.Vector2 velocity)
-    {
-        Kinematic.Velocity = new Vector3(velocity.x_, 0, velocity.y_);
-        Agent.velocity_ = velocity;
-    }
-
-    public void UpdateVelocity(Vector3 velocity)
-    {
-        Kinematic.Velocity = velocity;
-        Agent.velocity_ = new RVO.Vector2(velocity);
-    }
-
-    public void UpdatePosition(float dt)
-    {
-        var position = Kinematic.Position + Kinematic.Velocity * dt;
-        Kinematic.Position = position;
-        Agent.position_ = new RVO.Vector2(position);
-    }
 }
 
 [System.Serializable]

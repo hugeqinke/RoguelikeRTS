@@ -301,7 +301,8 @@ namespace RoguelikeRTS
                             && !MathUtil.OnPositiveHalfPlane(plane, unitComponent.BasicMovement.TargetPosition, 0)
                             && (int)avoidanceType >= avoidancePriority
                             && !sameGroup && !sameDirection
-                            && !neighborUnitComponent.BasicMovement.Resolved)
+                            && (!neighborUnitComponent.BasicMovement.Resolved ||
+                                    (neighborUnitComponent.BasicMovement.Resolved && neighborUnitComponent.BasicMovement.HoldingPosition)))
                         {
                             nearSqrDst = sqrDst;
                             nearNeighbor = neighbor;
@@ -466,11 +467,6 @@ namespace RoguelikeRTS
                     continue;
                 }
 
-                if (unitComponent.BasicMovement.DBG)
-                {
-                    Debug.Log("Testmp");
-                }
-
                 if (InPushRadius(unit, neighbor))
                 {
                     // Calculate how much an "inactive" unit should be pushed
@@ -502,7 +498,7 @@ namespace RoguelikeRTS
             }
 
             // match the velocity
-            unitComponent.UpdateVelocity(calculatedVelocity);
+            unitComponent.Kinematic.Velocity = calculatedVelocity;
             unitComponent.Kinematic.Position += unitComponent.Kinematic.Velocity * Time.fixedDeltaTime;
             unit.transform.position = unitComponent.Kinematic.Position;
         }
@@ -641,34 +637,11 @@ namespace RoguelikeRTS
             return blockers;
         }
 
-        private void DecideActivePhysicsAction(GameObject unit, UnitComponent unitComponent)
-        {
-            if (unitComponent.BasicMovement.Resolved)
-            {
-                ForceStop(unit);
-            }
-            else
-            {
-                var steeringResult = Steering.ArriveBehavior.GetSteering(
-                    unitComponent.Kinematic,
-                    unitComponent.Arrive,
-                    unitComponent.BasicMovement.TargetPosition);
-
-                if (steeringResult != null)
-                {
-                    unitComponent.Kinematic.Velocity += steeringResult.Acceleration * Time.fixedDeltaTime;
-                    unitComponent.Kinematic.Position += unitComponent.Kinematic.Velocity * Time.fixedDeltaTime;
-
-                    unit.transform.position = unitComponent.Kinematic.Position;
-                }
-            }
-        }
-
         private void ForceStop(GameObject unit)
         {
             var unitComponent = unit.FetchComponent<UnitComponent>();
             unitComponent.BasicMovement.TargetPosition = unit.transform.position;
-            unitComponent.UpdateVelocity(Vector3.zero);
+            unitComponent.Kinematic.Velocity = Vector3.zero;
         }
 
         private bool NearTarget(GameObject unit)
@@ -777,26 +750,6 @@ namespace RoguelikeRTS
                 var unitComponent = unit.FetchComponent<UnitComponent>();
                 unitComponent.Kinematic.Position = unit.transform.position;
                 unitComponent.BasicMovement.TargetPosition = unit.transform.position;
-                unitComponent.Agent = RVO.Simulator.Instance.createAgentAdapter(
-                    unit,
-                    new RVO.Vector2(unit.transform.position),
-                    RVOProperties.NeighborRadius,
-                    RVOProperties.MaxNeighbors,
-                    RVOProperties.TimeHorizonAgents,
-                    RVOProperties.TimeHorizonObstacles,
-                    unitComponent.Radius,
-                    unitComponent.Kinematic.SpeedCap,
-                    new RVO.Vector2(unitComponent.Kinematic.Velocity)
-                );
-            }
-
-            // Setup RVO parameters
-            RVO.Simulator.instance_ = new RVO.Simulator();
-            RVO.Simulator.Instance.setTimeStep(Time.fixedDeltaTime);
-            foreach (var unit in units)
-            {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
-                RVO.Simulator.Instance.addAgent(unitComponent.Agent);
             }
         }
 
