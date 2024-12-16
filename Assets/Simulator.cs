@@ -385,7 +385,8 @@ namespace RoguelikeRTS
                 unitComponent.Kinematic.Position += delta;
                 unit.transform.position = unitComponent.Kinematic.Position;
 
-                if (TriggerStop(unit, InputManager.MoveGroupMap[unit]))
+                var moveGroup = InputManager.MoveGroupMap.ContainsKey(unit) ? InputManager.MoveGroupMap[unit] : null;
+                if (TriggerStop(unit, moveGroup))
                 {
                     ForceStop(unit);
                     unitComponent.BasicMovement.Resolved = true;
@@ -589,31 +590,36 @@ namespace RoguelikeRTS
             // }
 
             var neighbors = GetNeighbors(unit);
-            foreach (var neighbor in neighbors)
-            {
-                if (moveGroup.Units.Contains(neighbor))
-                {
-                    // Handle the case where units are in the same move group
-                    // Important subcase 
-                    // - If units of the same group are colliding, near the destination, and going in opposite direction
-                    // - If neighboring unit in same group has reached the destination
-                    var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
-                    if (IsColliding(unit, neighbor))
-                    {
-                        var unitVelocity = unitComponent.Kinematic.Velocity.normalized;
-                        var neighborUnitVelocity = neighborUnitComponent.Kinematic.Velocity.normalized;
-                        if (NearTarget(unit) && Vector3.Dot(unitVelocity, neighborUnitVelocity) < 0)
-                        {
-                            return true;
-                        }
 
-                        if (neighborUnitComponent.BasicMovement.Resolved)
+            if (moveGroup != null)
+            {
+                foreach (var neighbor in neighbors)
+                {
+                    if (moveGroup.Units.Contains(neighbor))
+                    {
+                        // Handle the case where units are in the same move group
+                        // Important subcase 
+                        // - If units of the same group are colliding, near the destination, and going in opposite direction
+                        // - If neighboring unit in same group has reached the destination
+                        var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+                        if (IsColliding(unit, neighbor))
                         {
-                            return true;
+                            var unitVelocity = unitComponent.Kinematic.Velocity.normalized;
+                            var neighborUnitVelocity = neighborUnitComponent.Kinematic.Velocity.normalized;
+                            if (NearTarget(unit) && Vector3.Dot(unitVelocity, neighborUnitVelocity) < 0)
+                            {
+                                return true;
+                            }
+
+                            if (neighborUnitComponent.BasicMovement.Resolved)
+                            {
+                                return true;
+                            }
                         }
                     }
                 }
             }
+
 
             return false;
         }
