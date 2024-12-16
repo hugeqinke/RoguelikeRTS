@@ -155,17 +155,13 @@ namespace RoguelikeRTS
             var relativeDir = (unit.transform.position - neighbor.transform.position).normalized;
             var rightDir = Quaternion.Euler(0, rotateAmount, 0) * relativeDir;
             var rightTarget = neighbor.transform.position + rightDir * (neighborUnitComponent.Radius + 2 * unitComponent.Radius);
-            var desiredRight = rightTarget - unit.transform.position;
-            var rightProj = Vector3.Project(desiredRight, desiredDir);
-            var rightRej = rightProj - desiredRight;
+            var rightSqrDst = (unitComponent.BasicMovement.TargetPosition - rightTarget).sqrMagnitude;
 
             var leftDir = Quaternion.Euler(0, -rotateAmount, 0) * relativeDir;
             var leftTarget = neighbor.transform.position + leftDir * (neighborUnitComponent.Radius + 2 * unitComponent.Radius);
-            var desiredLeft = leftTarget - unit.transform.position;
-            var leftProj = Vector3.Project(desiredLeft, desiredDir);
-            var leftRej = leftProj - desiredLeft;
+            var leftSqrDst = (unitComponent.BasicMovement.TargetPosition - leftTarget).sqrMagnitude;
 
-            if (rightRej.sqrMagnitude < leftRej.sqrMagnitude)
+            if (rightSqrDst < leftSqrDst)
             {
                 return 1;
             }
@@ -297,8 +293,10 @@ namespace RoguelikeRTS
                             }
                         }
 
+                        var onPositiveHalfPlane = MathUtil.OnPositiveHalfPlane(plane, unitComponent.BasicMovement.TargetPosition, 0);
+
                         if (sqrDst < nearSqrDst
-                            && !MathUtil.OnPositiveHalfPlane(plane, unitComponent.BasicMovement.TargetPosition, 0)
+                            && !onPositiveHalfPlane
                             && (int)avoidanceType >= avoidancePriority
                             && !sameGroup && !sameDirection
                             && (!neighborUnitComponent.BasicMovement.Resolved ||
@@ -355,8 +353,14 @@ namespace RoguelikeRTS
                             var target = nearNeighbor.transform.position + relativeDir * (nearNeighborUnitComponent.Radius + 2 * unitComponent.Radius);
                             var desiredDir = (target - unit.transform.position).normalized;
                             unitComponent.Kinematic.PreferredVelocity = desiredDir * unitComponent.Kinematic.SpeedCap;
-                            // Debug.DrawLine(nearNeighbor.transform.position, target, Color.cyan);
-                            // Debug.DrawRay(unit.transform.position, desiredDir * unitComponent.Kinematic.SpeedCap, Color.yellow);
+
+                            if (unitComponent.BasicMovement.DBG)
+                            {
+                                Debug.DrawLine(nearNeighbor.transform.position, target, Color.cyan);
+                                Debug.DrawRay(unit.transform.position, desiredDir * unitComponent.Kinematic.SpeedCap, Color.yellow);
+                                Debug.DrawRay(unit.transform.position, preferredDir * 5, Color.blue);
+
+                            }
                         }
                     }
                 }
@@ -364,8 +368,6 @@ namespace RoguelikeRTS
                 {
                     unitComponent.BasicMovement.SidePreference = 0;
                 }
-
-                // Debug.DrawRay(unit.transform.position, preferredDir * 5, Color.blue);
             }
 
             foreach (var unit in units)
