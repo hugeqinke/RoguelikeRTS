@@ -129,6 +129,26 @@ namespace RoguelikeRTS
             }
         }
 
+        private int ChooseSignVelocity(GameObject unit, GameObject neighbor)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+
+            var neighborDesiredDir = neighborUnitComponent.BasicMovement.TargetPosition - neighbor.transform.position;
+            var relativeDir = neighbor.transform.position - unit.transform.position;
+
+            var a = unit.transform.position;
+            var b = unit.transform.position + relativeDir;
+            var c = unit.transform.position + neighborDesiredDir;
+
+            if (MathUtil.LeftOf(a, b, c) > 0)
+            {
+                return -1;
+            }
+
+            return 1;
+        }
+
         private int ChooseSign(GameObject unit, GameObject neighbor)
         {
             var unitComponent = unit.FetchComponent<UnitComponent>();
@@ -297,21 +317,28 @@ namespace RoguelikeRTS
                         var nearNeighborUnitComponent = nearNeighbor.FetchComponent<UnitComponent>();
                         if (avoidanceType == AvoidanceType.Moving)
                         {
-                            if (IsHeadOn(unit, nearNeighbor))
+                            if (nearNeighborUnitComponent.BasicMovement.SidePreference != 0
+                                    && unitComponent.BasicMovement.SidePreference != nearNeighborUnitComponent.BasicMovement.SidePreference)
                             {
-                                if (nearNeighborUnitComponent.BasicMovement.SidePreference != 0 && unitComponent.BasicMovement.SidePreference != nearNeighborUnitComponent.BasicMovement.SidePreference)
-                                {
-                                    unitComponent.BasicMovement.SidePreference = nearNeighborUnitComponent.BasicMovement.SidePreference;
-                                }
-                                else if (nearNeighborUnitComponent.BasicMovement.SidePreference == 0 && unitComponent.BasicMovement.SidePreference == 0)
-                                {
-                                    unitComponent.BasicMovement.SidePreference = ChooseSign(unit, nearNeighbor);
-                                }
+                                // This is to make sure two moving units eventually resolve their incoming collisoin.  If two units have
+                                // opposite signs for their side preferences, then they'll run into each other forever
+                                unitComponent.BasicMovement.SidePreference = nearNeighborUnitComponent.BasicMovement.SidePreference;
                             }
-                            else
+                            else if (nearNeighborUnitComponent.BasicMovement.SidePreference == 0 && unitComponent.BasicMovement.SidePreference == 0)
                             {
-                                unitComponent.BasicMovement.SidePreference = ChooseSign(unit, nearNeighbor);
+                                unitComponent.BasicMovement.SidePreference = ChooseSignVelocity(unit, nearNeighbor);
                             }
+
+                            var relativeDir = (unit.transform.position - nearNeighbor.transform.position).normalized;
+                            relativeDir = Quaternion.Euler(
+                                0,
+                                unitComponent.BasicMovement.SidePreference * 45,
+                                0) * relativeDir;
+
+                            var target = nearNeighbor.transform.position + relativeDir * (nearNeighborUnitComponent.Radius + unitComponent.Radius);
+
+                            var desiredDir = (target - unit.transform.position).normalized;
+                            unitComponent.Kinematic.PreferredVelocity = desiredDir * unitComponent.Kinematic.SpeedCap;
                         }
                         else
                         {
@@ -319,20 +346,20 @@ namespace RoguelikeRTS
                             {
                                 unitComponent.BasicMovement.SidePreference = ChooseSign(unit, nearNeighbor);
                             }
+
+                            var relativeDir = (unit.transform.position - nearNeighbor.transform.position).normalized;
+                            relativeDir = Quaternion.Euler(
+                                0,
+                                unitComponent.BasicMovement.SidePreference * rotateAmount,
+                                0) * relativeDir;
+
+                            var target = nearNeighbor.transform.position + relativeDir * (nearNeighborUnitComponent.Radius + 2 * unitComponent.Radius);
+                            Debug.DrawLine(nearNeighbor.transform.position, target, Color.cyan);
+
+                            var desiredDir = (target - unit.transform.position).normalized;
+                            unitComponent.Kinematic.PreferredVelocity = desiredDir * unitComponent.Kinematic.SpeedCap;
+                            Debug.DrawRay(unit.transform.position, desiredDir * unitComponent.Kinematic.SpeedCap, Color.yellow);
                         }
-
-                        var relativeDir = (unit.transform.position - nearNeighbor.transform.position).normalized;
-                        relativeDir = Quaternion.Euler(
-                            0,
-                            unitComponent.BasicMovement.SidePreference * rotateAmount,
-                            0) * relativeDir;
-
-                        var target = nearNeighbor.transform.position + relativeDir * (nearNeighborUnitComponent.Radius + 2 * unitComponent.Radius);
-                        Debug.DrawLine(nearNeighbor.transform.position, target, Color.cyan);
-
-                        var desiredDir = (target - unit.transform.position).normalized;
-                        unitComponent.Kinematic.PreferredVelocity = desiredDir * unitComponent.Kinematic.SpeedCap;
-                        Debug.DrawRay(unit.transform.position, desiredDir * unitComponent.Kinematic.SpeedCap, Color.yellow);
                     }
                 }
                 else
@@ -524,8 +551,8 @@ namespace RoguelikeRTS
                 // Try playing around with TOI or some other collision resolver on top of the
                 // iterative relaxing I'm doing right now
                 var bothStationary = !isUnitMoving
-                    && !isNeighborMoving
-                    && unitComponent.BasicMovement.LastMoveTime >= neighborUnitComponent.BasicMovement.LastMoveTime;
+            && !isNeighborMoving
+            && unitComponent.BasicMovement.LastMoveTime >= neighborUnitComponent.BasicMovement.LastMoveTime;
                 var neighborStationary = isUnitMoving && !isNeighborMoving;
 
                 if (bothMoving || bothStationary || neighborStationary)
