@@ -2,26 +2,26 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using UnityEditor.Experimental.GraphView;
+using UnityEngine.Diagnostics;
 
 namespace RoguelikeRTS
 {
     public class Simulator : MonoBehaviour
     {
         public float NeighborScanRadius;
-        public float TargetInfluenceRadius;
-        public float PushableRadius;
         public float ResponseCoefficient;
 
         public InputManager InputManager;
         public static Entity Entity;
         public static Simulator Instance;
 
-        public RVOProperties RVOProperties;
         public int Iterations;
-        public List<GameObject> Obstacles;
 
         public float MovingNeighborRadius;
         private static float rotateAmount = 30f;
+
+        public float AlertRadius;
 
         private void Awake()
         {
@@ -78,6 +78,7 @@ namespace RoguelikeRTS
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
                 unitComponent.Attacking = false;
+                unitComponent.InAlertRange = false;
 
                 if (unitComponent.Target != null)
                 {
@@ -85,14 +86,58 @@ namespace RoguelikeRTS
                     var sqrDst = relativeDir.sqrMagnitude;
                     var targetUnitComponent = unitComponent.Target.FetchComponent<UnitComponent>();
 
+                    // Check if should switch Attack targets
+                    // TODO: Can just use opposing layer mask
+
+                    // Check if in alert radius - if in alert radius, we'll do special stuff
+                    var alertRadius = AlertRadius + unitComponent.Radius + targetUnitComponent.Radius;
+                    if (sqrDst < alertRadius * alertRadius)
+                    {
+                        unitComponent.InAlertRange = true;
+                    }
+
+                    // Check if can attack
+
                     var radius = unitComponent.AttackRadius
                         + unitComponent.Radius
                         + targetUnitComponent.Radius;
 
+
                     if (sqrDst < radius * radius)
                     {
+                        // TODO: I want a centralized area to update velocity here, rather
+                        // than scattering it willy nilly
                         unitComponent.Kinematic.Velocity = Vector3.zero;
                         unitComponent.Attacking = true;
+                    }
+
+                    if (!unitComponent.Attacking)
+                    {
+                        var overlaps = Physics.OverlapSphere(unit.transform.position, AlertRadius + unitComponent.Radius, Util.Layers.PlayerAndAIUnitMask);
+                        var obstacles = CombatClearPath(unit, Mathf.Sqrt(sqrDst));
+                        foreach (var overlap in overlaps)
+                        {
+                            var overlapUnitComponent = overlap.gameObject.FetchComponent<UnitComponent>();
+                            if (overlap.gameObject == unitComponent.Target || overlapUnitComponent.Owner == unitComponent.Owner)
+                            {
+                                continue;
+                            }
+
+                            // Check if this unit is with an acceptable radius to the attack target
+                            var dir = overlap.gameObject.transform.position - unit.transform.position;
+                            var retargetRadius = AlertRadius + overlapUnitComponent.Radius + unitComponent.Radius;
+                            if (dir.sqrMagnitude < retargetRadius * retargetRadius)
+                            {
+                                // check if there's no clear path to the current attack target
+                                if (obstacles.Count != 0)
+                                {
+                                    unitComponent.Target = overlap.gameObject;
+                                    unitComponent.BasicMovement.TargetPosition = unitComponent.Target.transform.position;
+                                    break;
+                                }
+                            }
+                        }
+
                     }
                 }
             }
@@ -194,21 +239,22 @@ namespace RoguelikeRTS
             return !onPositiveHalfPlane || (neighborUnitComponent.BasicMovement.Resolved && onPositiveHalfPlane && unitComponent.BasicMovement.SidePreference != 0);
         }
 
-        private bool ResolvePlayerConstraints(GameObject unit, GameObject neighbor, float avoidancePriority)
+        private bool NeighborInCombat(GameObject unit, GameObject neighbor)
+        {
+            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            return neighborUnitComponent.Attacking || (neighborUnitComponent.InAlertRange && neighborUnitComponent.Target == unitComponent.Target);
+        }
+
+        private bool ResolveFriendNonCombatConstraints(GameObject unit, GameObject neighbor, float avoidancePriority)
         {
             var unitComponent = unit.FetchComponent<UnitComponent>();
             var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
-            if (unitComponent.Owner != neighborUnitComponent.Owner)
+
+            if (NeighborInCombat(unit, neighbor))
             {
                 return true;
             }
-
-            if (neighborUnitComponent.Attacking)
-            {
-                return true;
-            }
-
-            var avoidanceType = GetAvoidanceType(neighbor);
 
             // Test if same group or going towards the same direction
             var sameGroup = false;
@@ -236,25 +282,38 @@ namespace RoguelikeRTS
                 }
             }
 
-            var validResolveState = !neighborUnitComponent.BasicMovement.Resolved
-                || (neighborUnitComponent.BasicMovement.Resolved && neighborUnitComponent.BasicMovement.HoldingPosition);
+            return !sameDirection && !sameGroup;
+        }
 
-            if (neighborUnitComponent.Owner == unitComponent.Owner)
+        private bool ResolveFriendConstraints(GameObject unit, GameObject neighbor, float avoidancePriority)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+            if (unitComponent.Owner != neighborUnitComponent.Owner)
             {
-                if ((int)avoidanceType >= avoidancePriority
-                        && !sameGroup
-                        && !sameDirection
-                        && validResolveState)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+                return true;
             }
 
-            return false;
+            if (neighborUnitComponent.Attacking)
+            {
+                return true;
+            }
+
+            var avoidanceType = GetAvoidanceType(neighbor);
+
+            var validResolvedState = neighborUnitComponent.BasicMovement.Resolved && neighborUnitComponent.BasicMovement.HoldingPosition;
+            var validResolveState = !neighborUnitComponent.BasicMovement.Resolved || validResolvedState;
+
+            if ((int)avoidanceType >= avoidancePriority
+                    && validResolveState
+                    && (ResolveFriendNonCombatConstraints(unit, neighbor, avoidancePriority) || NeighborInCombat(unit, neighbor)))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private bool ResolveEnemyConstraints(GameObject unit, GameObject neighbor)
@@ -277,6 +336,50 @@ namespace RoguelikeRTS
             return true;
         }
 
+        private List<GameObject> CombatClearPath(GameObject unit, float range)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var overlaps = Physics.OverlapSphere(unit.transform.position, range, Util.Layers.PlayerAndAIUnitMask);
+
+            var desiredDir = unitComponent.BasicMovement.TargetPosition - unitComponent.transform.position;
+            var rotation = Quaternion.Euler(0, Vector3.SignedAngle(Vector3.forward, desiredDir, Vector3.up), 0);
+            var forward = rotation * Vector3.forward;
+
+            var leftPoint = unit.transform.position + unitComponent.Radius * (rotation * Vector3.left);
+            var leftPlane = new MathUtil.Plane(Vector3.Cross(Vector3.up, forward), leftPoint);
+
+            var rightPoint = unit.transform.position + unitComponent.Radius * (rotation * Vector3.right);
+            var rightPlane = new MathUtil.Plane(Vector3.Cross(forward, Vector3.up), rightPoint);
+
+            var backPlane = new MathUtil.Plane(forward, unit.transform.position);
+
+            var units = new List<GameObject>();
+            foreach (var overlap in overlaps)
+            {
+                if (overlap.gameObject != unit)
+                {
+                    var overlapUnitComponent = overlap.gameObject.FetchComponent<UnitComponent>();
+
+                    // Check if in bounds of clear path
+                    if (
+                        MathUtil.OnPositiveHalfPlane(leftPlane, overlap.gameObject.transform.position, overlapUnitComponent.Radius)
+                        && MathUtil.OnPositiveHalfPlane(rightPlane, overlap.gameObject.transform.position, overlapUnitComponent.Radius)
+                        && MathUtil.OnPositiveHalfPlane(backPlane, overlap.gameObject.transform.position, overlapUnitComponent.Radius))
+                    {
+                        // Check if valid criteria
+                        var friendConstraint = overlapUnitComponent.Owner == unitComponent.Owner && NeighborInCombat(unit, overlap.gameObject);
+                        var enemyConstraint = overlapUnitComponent.Owner != unitComponent.Owner && overlap.gameObject != unitComponent.Target;
+                        if (friendConstraint || enemyConstraint)
+                        {
+                            units.Add(overlap.gameObject);
+                        }
+                    }
+                }
+            }
+
+            return units;
+        }
+
         private List<GameObject> ClearPath(GameObject unit)
         {
             var unitComponent = unit.FetchComponent<UnitComponent>();
@@ -287,10 +390,10 @@ namespace RoguelikeRTS
             var rotation = Quaternion.Euler(0, Vector3.SignedAngle(Vector3.forward, desiredDir, Vector3.up), 0);
             var forward = rotation * Vector3.forward;
 
-            var leftPoint = unit.transform.position + (unitComponent.Radius) * (rotation * Vector3.left);
+            var leftPoint = unit.transform.position + unitComponent.Radius * (rotation * Vector3.left);
             var leftPlane = new MathUtil.Plane(Vector3.Cross(Vector3.up, forward), leftPoint);
 
-            var rightPoint = unit.transform.position + (unitComponent.Radius) * (rotation * Vector3.right);
+            var rightPoint = unit.transform.position + unitComponent.Radius * (rotation * Vector3.right);
             var rightPlane = new MathUtil.Plane(Vector3.Cross(forward, Vector3.up), rightPoint);
 
             var backPlane = new MathUtil.Plane(forward, unit.transform.position);
@@ -308,6 +411,7 @@ namespace RoguelikeRTS
                     {
                         var avoidanceType = GetAvoidanceType(overlap.gameObject);
 
+                        units.Add(overlap.gameObject);
                         if (avoidanceType == AvoidanceType.Stationary)
                         {
                             units.Add(overlap.gameObject);
@@ -396,7 +500,7 @@ namespace RoguelikeRTS
                         // - Neighbor has to be moving, or holding position
                         if (sqrDst < nearSqrDst
                             && ResolveHalfPlaneConstraints(unit, neighbor)
-                            && ResolvePlayerConstraints(unit, neighbor, avoidancePriority)
+                            && ResolveFriendConstraints(unit, neighbor, avoidancePriority)
                             && ResolveEnemyConstraints(unit, neighbor))
                         {
                             nearSqrDst = sqrDst;
@@ -923,7 +1027,7 @@ namespace RoguelikeRTS
                 var neighborRadius = neighborComponent.Radius;
 
                 var dst = (unit.transform.position - neighbor.transform.position).magnitude;
-                dst -= (neighborRadius + unitRadius);
+                dst -= neighborRadius + unitRadius;
 
                 if (dst < NeighborScanRadius)
                 {

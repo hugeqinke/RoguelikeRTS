@@ -23,6 +23,8 @@ public class UnitComponent : MonoBehaviour, IComponent
     public GameObject Target;
     public float AttackRadius;
     public bool Attacking;
+
+    public bool InAlertRange;
 }
 
 [System.Serializable]
