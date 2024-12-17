@@ -51,6 +51,10 @@ namespace RoguelikeRTS
             foreach (var unit in units)
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
+                // if (unitComponent.Attacking)
+                // {
+                //     continue;
+                // }
 
                 if (!unitComponent.BasicMovement.Resolved)
                 {
@@ -63,9 +67,14 @@ namespace RoguelikeRTS
             }
         }
 
-        private void CheckCombatState(HashSet<GameObject> unresolvedUnits)
+        private void CheckCombatState()
         {
-            foreach (var unit in unresolvedUnits)
+            var units = Entity.Fetch(new List<System.Type>()
+            {
+                typeof(UnitComponent)
+            });
+
+            foreach (var unit in units)
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
                 unitComponent.Attacking = false;
@@ -82,6 +91,7 @@ namespace RoguelikeRTS
 
                     if (sqrDst < radius * radius)
                     {
+                        unitComponent.Kinematic.Velocity = Vector3.zero;
                         unitComponent.Attacking = true;
                     }
                 }
@@ -169,6 +179,104 @@ namespace RoguelikeRTS
             return -1;
         }
 
+        private bool ResolveHalfPlaneConstraints(GameObject unit, GameObject neighbor)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+
+            var relativeDir = unit.transform.position - neighbor.transform.position;
+            var plane = new MathUtil.Plane(relativeDir, neighbor.transform.position);
+            var onPositiveHalfPlane = MathUtil.OnPositiveHalfPlane(plane, unitComponent.BasicMovement.TargetPosition, 0);
+
+            // Note - apply the second part of this check to Resolved units ONLY since
+            // units moving in opposite directions could stick to each other if one
+            // of them has a bad side preference choice
+            return !onPositiveHalfPlane || (neighborUnitComponent.BasicMovement.Resolved && onPositiveHalfPlane && unitComponent.BasicMovement.SidePreference != 0);
+        }
+
+        private bool ResolvePlayerConstraints(GameObject unit, GameObject neighbor, float avoidancePriority)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+            if (unitComponent.Owner != neighborUnitComponent.Owner)
+            {
+                return true;
+            }
+
+            if (neighborUnitComponent.Attacking)
+            {
+                return true;
+            }
+
+            var avoidanceType = GetAvoidanceType(neighbor);
+
+            // Test if same group or going towards the same direction
+            var sameGroup = false;
+            if (InputManager.MoveGroupMap.ContainsKey(neighbor) && InputManager.MoveGroupMap.ContainsKey(unit))
+            {
+                sameGroup = InputManager.MoveGroupMap[neighbor] == InputManager.MoveGroupMap[unit];
+            }
+
+            var sameDirection = false;
+            var unitDesiredDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
+
+            if (neighborUnitComponent.Kinematic.Velocity.sqrMagnitude > Mathf.Epsilon)
+            {
+                // Only check same direction if neighbor's velocity is greater than zero
+                // otherwise, if a unit is stationary and got pushed, this might cause
+                // problems with avoiding units getting stuck on this neighbor
+                var neighborDesiredDir = neighborUnitComponent.BasicMovement.TargetPosition - neighbor.transform.position;
+
+                if (neighborDesiredDir.sqrMagnitude > Mathf.Epsilon)
+                {
+                    if (Vector3.Angle(unitDesiredDir, neighborDesiredDir) < 30)
+                    {
+                        sameDirection = true;
+                    }
+                }
+            }
+
+            var validResolveState = !neighborUnitComponent.BasicMovement.Resolved
+                || (neighborUnitComponent.BasicMovement.Resolved && neighborUnitComponent.BasicMovement.HoldingPosition);
+
+            if (neighborUnitComponent.Owner == unitComponent.Owner)
+            {
+                if ((int)avoidanceType >= avoidancePriority
+                        && !sameGroup
+                        && !sameDirection
+                        && validResolveState)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
+        private bool ResolveEnemyConstraints(GameObject unit, GameObject neighbor)
+        {
+            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+
+            if (unitComponent != neighborUnitComponent)
+            {
+                if (unitComponent.Target == neighbor)
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+
+            return true;
+        }
+
         private List<GameObject> ClearPath(GameObject unit)
         {
             var unitComponent = unit.FetchComponent<UnitComponent>();
@@ -245,12 +353,21 @@ namespace RoguelikeRTS
                 var unitComponent = unit.FetchComponent<UnitComponent>();
                 var dir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
                 unitComponent.Kinematic.PreferredVelocity = dir.normalized * unitComponent.Kinematic.SpeedCap;
+
+                if (unitComponent.Attacking)
+                {
+                    unitComponent.Kinematic.PreferredVelocity = Vector3.zero;
+                }
             }
 
             foreach (var unit in units)
             {
                 // check for free path
                 var unitComponent = unit.FetchComponent<UnitComponent>();
+                if (unitComponent.Attacking)
+                {
+                    continue;
+                }
 
                 var preferredDir = unitComponent.Kinematic.PreferredVelocity.normalized;
 
@@ -269,40 +386,6 @@ namespace RoguelikeRTS
                         var dir = unit.transform.position - neighbor.transform.position;
                         var sqrDst = dir.sqrMagnitude;
 
-                        var relativeDir = unit.transform.position - neighbor.transform.position;
-                        var plane = new MathUtil.Plane(relativeDir, neighbor.transform.position);
-                        var avoidanceType = GetAvoidanceType(neighbor);
-
-                        // Test if same group or going towards the same direction
-                        var sameGroup = false;
-                        if (InputManager.MoveGroupMap.ContainsKey(neighbor) && InputManager.MoveGroupMap.ContainsKey(unit))
-                        {
-                            sameGroup = InputManager.MoveGroupMap[neighbor] == InputManager.MoveGroupMap[unit];
-                        }
-
-                        var sameDirection = false;
-                        var unitDesiredDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
-                        var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
-
-                        if (neighborUnitComponent.Kinematic.Velocity.sqrMagnitude > Mathf.Epsilon)
-                        {
-                            // Only check same direction if neighbor's velocity is greater than zero
-                            // otherwise, if a unit is stationary and got pushed, this might cause
-                            // problems with avoiding units getting stuck on this neighbor
-                            var neighborDesiredDir = neighborUnitComponent.BasicMovement.TargetPosition - neighbor.transform.position;
-
-                            if (neighborDesiredDir.sqrMagnitude > Mathf.Epsilon)
-                            {
-                                if (Vector3.Angle(unitDesiredDir, neighborDesiredDir) < 30)
-                                {
-                                    sameDirection = true;
-                                }
-                            }
-                        }
-
-
-                        var onPositiveHalfPlane = MathUtil.OnPositiveHalfPlane(plane, unitComponent.BasicMovement.TargetPosition, 0);
-
                         // Choose the neighbor with the following criteria:
                         // - Closest
                         // - Neighbor has to be "behind" the target position (relative to this unit).  The 
@@ -312,14 +395,14 @@ namespace RoguelikeRTS
                         //   This enables a "flocking" behavior when avoiding 
                         // - Neighbor has to be moving, or holding position
                         if (sqrDst < nearSqrDst
-                            && (!onPositiveHalfPlane || (onPositiveHalfPlane && unitComponent.BasicMovement.SidePreference != 0))
-                            && (int)avoidanceType >= avoidancePriority
-                            && !sameGroup && !sameDirection
-                            && (!neighborUnitComponent.BasicMovement.Resolved ||
-                                    (neighborUnitComponent.BasicMovement.Resolved && neighborUnitComponent.BasicMovement.HoldingPosition)))
+                            && ResolveHalfPlaneConstraints(unit, neighbor)
+                            && ResolvePlayerConstraints(unit, neighbor, avoidancePriority)
+                            && ResolveEnemyConstraints(unit, neighbor))
                         {
                             nearSqrDst = sqrDst;
                             nearNeighbor = neighbor;
+
+                            var avoidanceType = GetAvoidanceType(neighbor);
                             avoidancePriority = (int)avoidanceType;
                         }
                     }
@@ -477,7 +560,7 @@ namespace RoguelikeRTS
                 out HashSet<GameObject> unresolvedUnits,
                 out HashSet<GameObject> resolvedUnits);
 
-            // CheckCombatState(unresolvedUnits);
+            CheckCombatState();
             ProcessUnresolvedUnits(unresolvedUnits);
             ProcessResolvedUnits(resolvedUnits);
 
@@ -619,20 +702,8 @@ namespace RoguelikeRTS
             // TODO: handle sqrDst <= Mathf.Epsilon case
             if (sqrDst < thresholdRadius * thresholdRadius)
             {
-                var isUnitMoving = unitComponent.Kinematic.Velocity.sqrMagnitude > 0;
-                var isNeighborMoving = neighborUnitComponent.Kinematic.Velocity.sqrMagnitude > 0;
-
-                var bothMoving = isUnitMoving && isNeighborMoving;
-                // Use last move time to prevent pushing units that have been stationary for a while
-                // This is an aesthetic choice
-                // Try playing around with TOI or some other collision resolver on top of the
-                // iterative relaxing I'm doing right now
-                var bothStationary = !isUnitMoving
-            && !isNeighborMoving
-            && unitComponent.BasicMovement.LastMoveTime >= neighborUnitComponent.BasicMovement.LastMoveTime;
-                var neighborStationary = isUnitMoving && !isNeighborMoving;
-
-                if (bothMoving || bothStationary || neighborStationary)
+                if (AllyCollisionConstraints(unit, neighbor)
+                    && EnemyCollisionConstraints(unit, neighbor))
                 {
                     var dst = Mathf.Sqrt(sqrDst);
                     var delta = ResponseCoefficient * 0.5f * (thresholdRadius - dst);
@@ -642,6 +713,53 @@ namespace RoguelikeRTS
                     unitComponent.Kinematic.Position += pushVec;
                     unitComponent.transform.position = unitComponent.Kinematic.Position;
                 }
+            }
+        }
+
+        private bool EnemyCollisionConstraints(GameObject unit, GameObject neighbor)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var neighborComponent = neighbor.FetchComponent<UnitComponent>();
+
+            if (unitComponent.Owner == neighborComponent.Owner)
+            {
+                return true;
+            }
+
+            return !unitComponent.BasicMovement.Resolved && neighborComponent.BasicMovement.Resolved;
+        }
+
+        private bool AllyCollisionConstraints(GameObject unit, GameObject neighbor)
+        {
+            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+
+            if (unitComponent.Owner != neighborUnitComponent.Owner)
+            {
+                return true;
+            }
+
+            if (neighborUnitComponent.Attacking)
+            {
+                return true;
+            }
+            else
+            {
+                var isUnitMoving = unitComponent.Kinematic.Velocity.sqrMagnitude > 0;
+                var isNeighborMoving = neighborUnitComponent.Kinematic.Velocity.sqrMagnitude > 0;
+                var bothMoving = isUnitMoving && isNeighborMoving;
+
+                // Use last move time to prevent pushing units that have been stationary for a while
+                // This is an aesthetic choice
+                // Try playing around with TOI or some other collision resolver on top of the
+                // iterative relaxing I'm doing right now
+                var bothStationary = !isUnitMoving
+                    && !isNeighborMoving
+                    && unitComponent.BasicMovement.LastMoveTime >= neighborUnitComponent.BasicMovement.LastMoveTime;
+
+                var neighborStationary = isUnitMoving && !isNeighborMoving;
+
+                return bothMoving || bothStationary || neighborStationary;
             }
         }
 
