@@ -56,6 +56,7 @@ public class BasicMovement
     public bool Resolved = true;
     public bool HoldingPosition;
     public float ReturnRadius;
+    public float LastPushedByFriendlyNeighborTime;
     public float LastMoveTime = Mathf.NegativeInfinity; // Last TimeStep where velocity sqrDist was greater than zero
     public bool DBG;
 

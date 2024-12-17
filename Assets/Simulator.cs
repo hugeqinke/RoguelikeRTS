@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Linq;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine.Diagnostics;
+using System.Globalization;
 
 namespace RoguelikeRTS
 {
@@ -827,6 +828,11 @@ namespace RoguelikeRTS
                     var pushVec = relativeDir.normalized * delta;
                     unitComponent.Kinematic.Position += pushVec;
                     unitComponent.transform.position = unitComponent.Kinematic.Position;
+
+                    if (unitComponent.Owner == neighborUnitComponent.Owner)
+                    {
+                        unitComponent.BasicMovement.LastPushedByFriendlyNeighborTime = Time.fixedTime;
+                    }
                 }
             }
         }
@@ -841,7 +847,8 @@ namespace RoguelikeRTS
                 return true;
             }
 
-            return !unitComponent.BasicMovement.Resolved && neighborComponent.BasicMovement.Resolved;
+            return (!unitComponent.BasicMovement.Resolved && neighborComponent.BasicMovement.Resolved)
+                || (unitComponent.BasicMovement.Resolved && unitComponent.BasicMovement.LastPushedByFriendlyNeighborTime >= neighborComponent.BasicMovement.LastPushedByFriendlyNeighborTime && neighborComponent.BasicMovement.Resolved);
         }
 
         private bool AllyCollisionConstraints(GameObject unit, GameObject neighbor)
