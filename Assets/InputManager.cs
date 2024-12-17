@@ -65,6 +65,7 @@ public class InputManager : MonoBehaviour
             foreach (var unit in _selectedUnits)
             {
                 var unitComponent = unit.FetchComponent<UnitComponent>();
+                Simulator.Instance.ForceStop(unit);
                 unitComponent.BasicMovement.HoldingPosition = true;
             }
         }

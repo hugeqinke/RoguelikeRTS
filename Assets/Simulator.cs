@@ -283,20 +283,36 @@ namespace RoguelikeRTS
                         var sameDirection = false;
                         var unitDesiredDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
                         var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
-                        var neighborDesiredDir = neighborUnitComponent.BasicMovement.TargetPosition - neighbor.transform.position;
 
-                        if (neighborDesiredDir.sqrMagnitude > Mathf.Epsilon)
+                        if (neighborUnitComponent.Kinematic.Velocity.sqrMagnitude > Mathf.Epsilon)
                         {
-                            if (Vector3.Angle(unitDesiredDir, neighborDesiredDir) < 30)
+                            // Only check same direction if neighbor's velocity is greater than zero
+                            // otherwise, if a unit is stationary and got pushed, this might cause
+                            // problems with avoiding units getting stuck on this neighbor
+                            var neighborDesiredDir = neighborUnitComponent.BasicMovement.TargetPosition - neighbor.transform.position;
+
+                            if (neighborDesiredDir.sqrMagnitude > Mathf.Epsilon)
                             {
-                                sameDirection = true;
+                                if (Vector3.Angle(unitDesiredDir, neighborDesiredDir) < 30)
+                                {
+                                    sameDirection = true;
+                                }
                             }
                         }
 
+
                         var onPositiveHalfPlane = MathUtil.OnPositiveHalfPlane(plane, unitComponent.BasicMovement.TargetPosition, 0);
 
+                        // Choose the neighbor with the following criteria:
+                        // - Closest
+                        // - Neighbor has to be "behind" the target position (relative to this unit).  The 
+                        //   exception here is if the unit's already in the middle of avoiding, then we can consider
+                        //   this option
+                        // - Unit isn't in the same group as a neighbor or other unit going in the same target sameDirection
+                        //   This enables a "flocking" behavior when avoiding 
+                        // - Neighbor has to be moving, or holding position
                         if (sqrDst < nearSqrDst
-                            && !onPositiveHalfPlane
+                            && (!onPositiveHalfPlane || (onPositiveHalfPlane && unitComponent.BasicMovement.SidePreference != 0))
                             && (int)avoidanceType >= avoidancePriority
                             && !sameGroup && !sameDirection
                             && (!neighborUnitComponent.BasicMovement.Resolved ||
@@ -353,6 +369,64 @@ namespace RoguelikeRTS
                             var target = nearNeighbor.transform.position + relativeDir * (nearNeighborUnitComponent.Radius + 2 * unitComponent.Radius);
                             var desiredDir = (target - unit.transform.position).normalized;
                             unitComponent.Kinematic.PreferredVelocity = desiredDir * unitComponent.Kinematic.SpeedCap;
+
+                            /*
+                                Post check to make sure the side preference doesn't violate any constraints
+                                For instance - if a neighbor outside the viable neighbors is blocking the side
+                                that this unit's trying to go, this unit should try swapping sides
+                            */
+                            if (unitComponent.BasicMovement.SidePreference != 0)
+                            {
+                                var rotation = Quaternion.Euler(
+                                    0,
+                                    Vector3.SignedAngle(Vector3.forward, unitComponent.Kinematic.PreferredVelocity, Vector3.up),
+                                    0);
+
+                                var forward = rotation * Vector3.forward;
+
+                                var leftPoint = unit.transform.position + unitComponent.Radius * (rotation * Vector3.left);
+                                var leftPlane = new MathUtil.Plane(Vector3.Cross(Vector3.up, forward), leftPoint);
+
+                                var rightPoint = unit.transform.position + unitComponent.Radius * (rotation * Vector3.right);
+                                var rightPlane = new MathUtil.Plane(Vector3.Cross(forward, Vector3.up), rightPoint);
+
+                                var backPlane = new MathUtil.Plane(forward, unit.transform.position);
+
+                                var overlaps = Physics.OverlapSphere(
+                                    unitComponent.transform.position,
+                                    unitComponent.Radius + unitComponent.Kinematic.SpeedCap * 0.05f,
+                                    Util.Layers.PlayerAndAIUnitMask);
+
+                                foreach (var overlap in overlaps)
+                                {
+                                    if (overlap.gameObject == unit)
+                                    {
+                                        continue;
+                                    }
+
+                                    if (unitComponent.BasicMovement.DBG)
+                                    {
+                                        Debug.DrawLine(unit.transform.position, overlap.transform.position, Color.black);
+                                    }
+
+                                    var neighbor = overlap.gameObject;
+
+                                    // Make sure neighbor is blocking the direction the direction 
+                                    // that this unit's headed towards
+                                    var neighborUnitComponent = neighbor.GetComponent<UnitComponent>();
+                                    if (
+                                        MathUtil.OnPositiveHalfPlane(leftPlane, neighbor.transform.position, neighborUnitComponent.Radius)
+                                        && MathUtil.OnPositiveHalfPlane(rightPlane, neighbor.transform.position, neighborUnitComponent.Radius)
+                                        && MathUtil.OnPositiveHalfPlane(backPlane, neighbor.transform.position, neighborUnitComponent.Radius))
+                                    {
+                                        if (!neighbors.Contains(neighbor) && neighborUnitComponent.BasicMovement.HoldingPosition)
+                                        {
+                                            unitComponent.BasicMovement.SidePreference = -unitComponent.BasicMovement.SidePreference;
+                                        }
+                                    }
+                                }
+                            }
+
 
                             if (unitComponent.BasicMovement.DBG)
                             {
@@ -645,7 +719,7 @@ namespace RoguelikeRTS
             return blockers;
         }
 
-        private void ForceStop(GameObject unit)
+        public void ForceStop(GameObject unit)
         {
             var unitComponent = unit.FetchComponent<UnitComponent>();
             unitComponent.BasicMovement.TargetPosition = unit.transform.position;
