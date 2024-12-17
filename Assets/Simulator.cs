@@ -115,6 +115,9 @@ namespace RoguelikeRTS
                     {
                         var overlaps = Physics.OverlapSphere(unit.transform.position, AlertRadius + unitComponent.Radius, Util.Layers.PlayerAndAIUnitMask);
                         var obstacles = CombatClearPath(unit, Mathf.Sqrt(sqrDst));
+
+                        GameObject nearTarget = null;
+                        var nearSqrDst = Mathf.Infinity;
                         foreach (var overlap in overlaps)
                         {
                             var overlapUnitComponent = overlap.gameObject.FetchComponent<UnitComponent>();
@@ -131,11 +134,19 @@ namespace RoguelikeRTS
                                 // check if there's no clear path to the current attack target
                                 if (obstacles.Count != 0)
                                 {
-                                    unitComponent.Target = overlap.gameObject;
-                                    unitComponent.BasicMovement.TargetPosition = unitComponent.Target.transform.position;
-                                    break;
+                                    if (dir.sqrMagnitude < nearSqrDst)
+                                    {
+                                        nearTarget = overlap.gameObject;
+                                        nearSqrDst = dir.sqrMagnitude;
+                                    }
                                 }
                             }
+                        }
+
+                        if (nearTarget != null)
+                        {
+                            unitComponent.Target = nearTarget.gameObject;
+                            unitComponent.BasicMovement.TargetPosition = unitComponent.Target.transform.position;
                         }
 
                     }
@@ -345,10 +356,10 @@ namespace RoguelikeRTS
             var rotation = Quaternion.Euler(0, Vector3.SignedAngle(Vector3.forward, desiredDir, Vector3.up), 0);
             var forward = rotation * Vector3.forward;
 
-            var leftPoint = unit.transform.position + unitComponent.Radius * (rotation * Vector3.left);
+            var leftPoint = unit.transform.position + (unitComponent.Radius - 0.1f) * (rotation * Vector3.left);
             var leftPlane = new MathUtil.Plane(Vector3.Cross(Vector3.up, forward), leftPoint);
 
-            var rightPoint = unit.transform.position + unitComponent.Radius * (rotation * Vector3.right);
+            var rightPoint = unit.transform.position + (unitComponent.Radius - 0.1f) * (rotation * Vector3.right);
             var rightPlane = new MathUtil.Plane(Vector3.Cross(forward, Vector3.up), rightPoint);
 
             var backPlane = new MathUtil.Plane(forward, unit.transform.position);
