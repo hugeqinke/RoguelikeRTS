@@ -35,6 +35,8 @@ public class InputManager : MonoBehaviour
     public HashSet<MoveGroup> MoveGroups;
     public Dictionary<GameObject, MoveGroup> MoveGroupMap;
 
+    public Simulator Simulator;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -64,7 +66,7 @@ public class InputManager : MonoBehaviour
             // Hold position
             foreach (var unit in _selectedUnits)
             {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
+                var unitComponent = Simulator.UnitStore.GetArchetype(unit).UnitComponent;
                 Simulator.Instance.ForceStop(unit);
                 unitComponent.BasicMovement.HoldingPosition = true;
             }
@@ -96,7 +98,7 @@ public class InputManager : MonoBehaviour
     {
         foreach (var unit in moveGroup.Units)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var unitComponent = Simulator.UnitStore.GetArchetype(unit).UnitComponent;
             if (!unitComponent.BasicMovement.Resolved)
             {
                 return false;
@@ -198,12 +200,13 @@ public class InputManager : MonoBehaviour
             // Clear currently selected units
             ClearCurrentSelection();
             var frustrum = CreateFrustrum();
-            var playerUnits = Simulator.Entity.Fetch(new List<System.Type>() { typeof(PlayerComponent) });
-            foreach (var unit in playerUnits)
+
+            for (int i = 0; i < Simulator.PlayerUnitStore.Count; i++)
             {
-                if (IsOnFrustrum(frustrum, unit))
+                var unit = Simulator.PlayerUnitStore.Archetypes[i].UnitComponent;
+                if (IsOnFrustrum(frustrum, unit.gameObject))
                 {
-                    AddToSelection(unit);
+                    AddToSelection(unit.gameObject);
                 }
             }
 
@@ -216,7 +219,7 @@ public class InputManager : MonoBehaviour
     {
         foreach (var unit in units)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
             unitComponent.Kinematic.Velocity = Vector3.zero;
 
             unitComponent.BasicMovement.Resolved = false;
@@ -242,7 +245,7 @@ public class InputManager : MonoBehaviour
 
         foreach (var unit in _selectedUnits)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
             var unitPosition = math.mul(inverseBasisSpace, new float2(unit.transform.position.x, unit.transform.position.z));
 
             var points = new List<float2>()
@@ -362,7 +365,7 @@ public class InputManager : MonoBehaviour
 
     private bool IsOnFrustrum(MathUtil.Frustrum frustrum, GameObject unit)
     {
-        var unitComponent = unit.FetchComponent<UnitComponent>();
+        var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
         var position = unit.transform.position;
 
         var inFrustrum = false;
@@ -465,7 +468,7 @@ public class InputManager : MonoBehaviour
             // Set combat
             foreach (var unit in _selectedUnits)
             {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
+                var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
                 unitComponent.Target = enemyUnit;
             }
 
@@ -481,7 +484,7 @@ public class InputManager : MonoBehaviour
         foreach (var unit in _selectedUnits)
         {
             // Update unit state
-            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
             unitComponent.BasicMovement.TargetPosition = positions[unit];
             unitComponent.BasicMovement.RelativeDeltaStart = positions[unit] - unit.transform.position;
 
@@ -568,7 +571,7 @@ public class InputManager : MonoBehaviour
 
     private void DeselectUnit(GameObject unit)
     {
-        var unitComponent = unit.FetchComponent<UnitComponent>();
+        var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
         unitComponent.SelectionHighlight.gameObject.SetActive(false);
     }
 
@@ -578,7 +581,7 @@ public class InputManager : MonoBehaviour
         {
             _selectedUnits.Add(unit);
 
-            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
             unitComponent.SelectionHighlight.gameObject.SetActive(true);
         }
     }

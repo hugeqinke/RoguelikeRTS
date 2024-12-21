@@ -5,6 +5,9 @@ using System.Linq;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine.Diagnostics;
 using System.Globalization;
+using System;
+using Unity.VisualScripting;
+using UnityEngine.Profiling;
 
 namespace RoguelikeRTS
 {
@@ -14,7 +17,6 @@ namespace RoguelikeRTS
         public float ResponseCoefficient;
 
         public InputManager InputManager;
-        public static Entity Entity;
         public static Simulator Instance;
 
         public int Iterations;
@@ -24,9 +26,14 @@ namespace RoguelikeRTS
 
         public float AlertRadius;
 
+        // Entity Prototype
+        public ReferenceStore<UnitArchetype> UnitStore;
+        public ReferenceStore<UnitArchetype> PlayerUnitStore;
+
         private void Awake()
         {
-            Entity = new Entity();
+            UnitStore = new ReferenceStore<UnitArchetype>(400);
+            PlayerUnitStore = new ReferenceStore<UnitArchetype>(300);
             Instance = this;
         }
 
@@ -43,49 +50,36 @@ namespace RoguelikeRTS
             unresolvedUnits = new HashSet<GameObject>();
             resolvedUnits = new HashSet<GameObject>();
 
-            // Units main processing
-            var units = Entity.Fetch(new List<System.Type>()
+            for (int i = 0; i < UnitStore.Count; i++)
             {
-                typeof(UnitComponent)
-            });
-
-            foreach (var unit in units)
-            {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
-                // if (unitComponent.Attacking)
-                // {
-                //     continue;
-                // }
-
+                var unitComponent = UnitStore.Archetypes[i].UnitComponent;
                 if (!unitComponent.BasicMovement.Resolved)
                 {
-                    unresolvedUnits.Add(unit);
+                    unresolvedUnits.Add(unitComponent.gameObject);
                 }
                 else
                 {
-                    resolvedUnits.Add(unit);
+                    resolvedUnits.Add(unitComponent.gameObject);
                 }
             }
         }
 
         private void CheckCombatState()
         {
-            var units = Entity.Fetch(new List<System.Type>()
+            for (int i = 0; i < UnitStore.Count; i++)
             {
-                typeof(UnitComponent)
-            });
-
-            foreach (var unit in units)
-            {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
+                var unitArchetype = UnitStore.Archetypes[i];
+                var unitComponent = unitArchetype.UnitComponent;
                 unitComponent.Attacking = false;
                 unitComponent.InAlertRange = false;
 
                 if (unitComponent.Target != null)
                 {
-                    var relativeDir = unitComponent.Target.transform.position - unit.transform.position;
+                    var relativeDir = unitComponent.Target.transform.position - unitComponent.gameObject.transform.position;
                     var sqrDst = relativeDir.sqrMagnitude;
-                    var targetUnitComponent = unitComponent.Target.FetchComponent<UnitComponent>();
+
+                    var targetUnitArchetype = UnitStore.GetArchetype(unitComponent.Target);
+                    var targetUnitComponent = targetUnitArchetype.UnitComponent;
 
                     // Check if should switch Attack targets
                     // TODO: Can just use opposing layer mask
@@ -114,21 +108,22 @@ namespace RoguelikeRTS
 
                     if (!unitComponent.Attacking)
                     {
-                        var overlaps = Physics.OverlapSphere(unit.transform.position, AlertRadius + unitComponent.Radius, Util.Layers.PlayerAndAIUnitMask);
-                        var obstacles = CombatClearPath(unit, Mathf.Sqrt(sqrDst));
+                        var overlaps = Physics.OverlapSphere(unitComponent.transform.position, AlertRadius + unitComponent.Radius, Util.Layers.PlayerAndAIUnitMask);
+                        var obstacles = CombatClearPath(unitComponent.gameObject, Mathf.Sqrt(sqrDst));
 
                         GameObject nearTarget = null;
                         var nearSqrDst = Mathf.Infinity;
                         foreach (var overlap in overlaps)
                         {
-                            var overlapUnitComponent = overlap.gameObject.FetchComponent<UnitComponent>();
+                            var overlapArchetype = UnitStore.GetArchetype(overlap.gameObject);
+                            var overlapUnitComponent = overlapArchetype.UnitComponent;
                             if (overlap.gameObject == unitComponent.Target || overlapUnitComponent.Owner == unitComponent.Owner)
                             {
                                 continue;
                             }
 
                             // Check if this unit is with an acceptable radius to the attack target
-                            var dir = overlap.gameObject.transform.position - unit.transform.position;
+                            var dir = overlap.gameObject.transform.position - overlapUnitComponent.transform.position;
                             var retargetRadius = AlertRadius + overlapUnitComponent.Radius + unitComponent.Radius;
                             if (dir.sqrMagnitude < retargetRadius * retargetRadius)
                             {
@@ -159,7 +154,9 @@ namespace RoguelikeRTS
         {
             foreach (var unit in units)
             {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
+                var unitArchetype = UnitStore.GetArchetype(unit);
+                var unitComponent = unitArchetype.UnitComponent;
+
                 if (!unitComponent.BasicMovement.HoldingPosition)
                 {
                     var relativeSqrDst = (unitComponent.BasicMovement.TargetPosition - unit.transform.position).sqrMagnitude;
@@ -195,8 +192,8 @@ namespace RoguelikeRTS
 
         private int ChooseSignVelocity(GameObject unit, GameObject neighbor)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
-            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
+            var neighborUnitComponent = UnitStore.GetArchetype(neighbor).UnitComponent;
 
             var neighborDesiredDir = neighborUnitComponent.BasicMovement.TargetPosition - neighbor.transform.position;
             var relativeDir = neighbor.transform.position - unit.transform.position;
@@ -215,9 +212,8 @@ namespace RoguelikeRTS
 
         private int ChooseSign(GameObject unit, GameObject neighbor)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
-            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
-            var desiredDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
+            var neighborUnitComponent = UnitStore.GetArchetype(neighbor).UnitComponent;
 
             var relativeDir = (unit.transform.position - neighbor.transform.position).normalized;
             var rightDir = Quaternion.Euler(0, rotateAmount, 0) * relativeDir;
@@ -238,8 +234,8 @@ namespace RoguelikeRTS
 
         private bool ResolveHalfPlaneConstraints(GameObject unit, GameObject neighbor)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
-            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
+            var neighborUnitComponent = UnitStore.GetArchetype(neighbor).UnitComponent;
 
             var relativeDir = unit.transform.position - neighbor.transform.position;
             var plane = new MathUtil.Plane(relativeDir, neighbor.transform.position);
@@ -253,16 +249,15 @@ namespace RoguelikeRTS
 
         private bool NeighborInCombat(GameObject unit, GameObject neighbor)
         {
-            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
-            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
+            var neighborUnitComponent = UnitStore.GetArchetype(neighbor).UnitComponent;
             return neighborUnitComponent.Attacking || (neighborUnitComponent.InAlertRange && neighborUnitComponent.Target == unitComponent.Target);
         }
 
         private bool ResolveFriendNonCombatConstraints(GameObject unit, GameObject neighbor, float avoidancePriority)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
-            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
-
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
+            var neighborUnitComponent = UnitStore.GetArchetype(neighbor).UnitComponent;
             if (NeighborInCombat(unit, neighbor))
             {
                 return true;
@@ -299,8 +294,10 @@ namespace RoguelikeRTS
 
         private bool ResolveFriendConstraints(GameObject unit, GameObject neighbor, float avoidancePriority)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
-            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
+            var neighborUnitComponent = UnitStore.GetArchetype(neighbor).UnitComponent;
+
             if (unitComponent.Owner != neighborUnitComponent.Owner)
             {
                 return true;
@@ -330,8 +327,8 @@ namespace RoguelikeRTS
 
         private bool ResolveEnemyConstraints(GameObject unit, GameObject neighbor)
         {
-            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
-            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
+            var neighborUnitComponent = UnitStore.GetArchetype(neighbor).UnitComponent;
 
             if (unitComponent != neighborUnitComponent)
             {
@@ -350,7 +347,8 @@ namespace RoguelikeRTS
 
         private List<GameObject> CombatClearPath(GameObject unit, float range)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
+
             var overlaps = Physics.OverlapSphere(unit.transform.position, range, Util.Layers.PlayerAndAIUnitMask);
 
             var desiredDir = unitComponent.BasicMovement.TargetPosition - unitComponent.transform.position;
@@ -370,7 +368,8 @@ namespace RoguelikeRTS
             {
                 if (overlap.gameObject != unit)
                 {
-                    var overlapUnitComponent = overlap.gameObject.FetchComponent<UnitComponent>();
+
+                    var overlapUnitComponent = UnitStore.GetArchetype(overlap.gameObject).UnitComponent;
 
                     // Check if in bounds of clear path
                     if (
@@ -394,7 +393,8 @@ namespace RoguelikeRTS
 
         private List<GameObject> ClearPath(GameObject unit)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
+            Profiler.BeginSample("Calculate planes");
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
             var range = unitComponent.Radius + unitComponent.Kinematic.SpeedCap * unitComponent.BasicMovement.TimeHorizon;
             var overlaps = Physics.OverlapSphere(unit.transform.position, range, Util.Layers.PlayerAndAIUnitMask);
 
@@ -409,13 +409,15 @@ namespace RoguelikeRTS
             var rightPlane = new MathUtil.Plane(Vector3.Cross(forward, Vector3.up), rightPoint);
 
             var backPlane = new MathUtil.Plane(forward, unit.transform.position);
+            Profiler.EndSample();
 
+            Profiler.BeginSample("Process neighbor overlaps");
             var units = new List<GameObject>();
             foreach (var overlap in overlaps)
             {
                 if (overlap.gameObject != unit)
                 {
-                    var overlapUnitComponent = overlap.gameObject.FetchComponent<UnitComponent>();
+                    var overlapUnitComponent = UnitStore.GetArchetype(overlap.gameObject).UnitComponent;
                     if (
                         MathUtil.OnPositiveHalfPlane(leftPlane, overlap.gameObject.transform.position, overlapUnitComponent.Radius)
                         && MathUtil.OnPositiveHalfPlane(rightPlane, overlap.gameObject.transform.position, overlapUnitComponent.Radius)
@@ -440,17 +442,18 @@ namespace RoguelikeRTS
                     }
                 }
             }
+            Profiler.EndSample();
 
             return units;
         }
 
         private bool IsHeadOn(GameObject unit, GameObject neighbor)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
-            var neighborComponent = neighbor.FetchComponent<UnitComponent>();
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
+            var neighborUnitComponent = UnitStore.GetArchetype(neighbor).UnitComponent;
 
             var unitPreferredDir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
-            var neighborPreferredDir = neighborComponent.BasicMovement.TargetPosition - neighbor.transform.position;
+            var neighborPreferredDir = neighborUnitComponent.BasicMovement.TargetPosition - neighbor.transform.position;
 
             var angle = Vector3.Angle(unitPreferredDir, -neighborPreferredDir);
             if (angle < 90)
@@ -463,10 +466,11 @@ namespace RoguelikeRTS
 
         private void ProcessUnresolvedUnits(HashSet<GameObject> units)
         {
+            Profiler.BeginSample("Calculate preferred velocities");
             // Calculate preferred velocities
             foreach (var unit in units)
             {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
+                var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
                 var dir = unitComponent.BasicMovement.TargetPosition - unit.transform.position;
                 unitComponent.Kinematic.PreferredVelocity = dir.normalized * unitComponent.Kinematic.SpeedCap;
 
@@ -475,11 +479,13 @@ namespace RoguelikeRTS
                     unitComponent.Kinematic.PreferredVelocity = Vector3.zero;
                 }
             }
+            Profiler.EndSample();
 
+            Profiler.BeginSample("Calculate new velocities");
             foreach (var unit in units)
             {
                 // check for free path
-                var unitComponent = unit.FetchComponent<UnitComponent>();
+                var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
                 if (unitComponent.Attacking)
                 {
                     continue;
@@ -487,7 +493,9 @@ namespace RoguelikeRTS
 
                 var preferredDir = unitComponent.Kinematic.PreferredVelocity.normalized;
 
+                Profiler.BeginSample("Find Neighbors");
                 var neighbors = ClearPath(unit);
+                Profiler.EndSample();
 
                 if (neighbors.Count > 0)
                 {
@@ -497,6 +505,7 @@ namespace RoguelikeRTS
                     var nearSqrDst = Mathf.Infinity;
                     var avoidancePriority = -1;
 
+                    Profiler.BeginSample("Choose best neighbor");
                     foreach (var neighbor in neighbors)
                     {
                         var dir = unit.transform.position - neighbor.transform.position;
@@ -522,11 +531,14 @@ namespace RoguelikeRTS
                             avoidancePriority = (int)avoidanceType;
                         }
                     }
+                    Profiler.EndSample();
 
+                    Profiler.BeginSample("Calculate new velocity");
                     if (nearNeighbor != null)
                     {
                         var avoidanceType = GetAvoidanceType(nearNeighbor);
-                        var nearNeighborUnitComponent = nearNeighbor.FetchComponent<UnitComponent>();
+                        var nearNeighborUnitComponent = UnitStore.GetArchetype(nearNeighbor).UnitComponent;
+
                         if (avoidanceType == AvoidanceType.Moving)
                         {
                             if (nearNeighborUnitComponent.BasicMovement.SidePreference != 0
@@ -636,16 +648,19 @@ namespace RoguelikeRTS
                             }
                         }
                     }
+                    Profiler.EndSample();
                 }
                 else
                 {
                     unitComponent.BasicMovement.SidePreference = 0;
                 }
             }
+            Profiler.EndSample();
 
+            Profiler.BeginSample("Update position");
             foreach (var unit in units)
             {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
+                var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
                 unitComponent.Kinematic.Velocity = unitComponent.Kinematic.PreferredVelocity;
                 // compute new position
                 var delta = unitComponent.Kinematic.Velocity * Time.fixedDeltaTime;
@@ -667,52 +682,66 @@ namespace RoguelikeRTS
                     unitComponent.BasicMovement.Resolved = true;
                 }
             }
+            Profiler.EndSample();
         }
 
         private void FixedUpdate()
         {
+            Profiler.BeginSample("Categorizing Unit");
             // Process unresolved units
             CategorizeUnits(
                 out HashSet<GameObject> unresolvedUnits,
                 out HashSet<GameObject> resolvedUnits);
+            Profiler.EndSample();
 
+            Profiler.BeginSample("Check Combat State");
             CheckCombatState();
+            Profiler.EndSample();
+
+
+            Profiler.BeginSample("Process unresolved units");
             ProcessUnresolvedUnits(unresolvedUnits);
+            Profiler.EndSample();
+
+            Profiler.BeginSample("Process resolved units");
             ProcessResolvedUnits(resolvedUnits);
+            Profiler.EndSample();
 
+            Profiler.BeginSample("Update last move time");
             // Post processing
-            var units = Entity.Fetch(new List<System.Type>()
-            {
-                typeof (UnitComponent)
-            });
-
             var neighborDictionary = new Dictionary<GameObject, List<GameObject>>();
-            foreach (var unit in units)
+            for (int i = 0; i < UnitStore.Count; i++)
             {
-                neighborDictionary.Add(unit, GetNeighbors(unit));
+                var unitComponent = UnitStore.Archetypes[i].UnitComponent;
+                var unit = unitComponent.gameObject;
 
-                var unitComponent = unit.FetchComponent<UnitComponent>();
+                neighborDictionary.Add(unit, GetNeighbors(unit));
 
                 if (unitComponent.Kinematic.Velocity.sqrMagnitude > 0)
                 {
                     unitComponent.BasicMovement.LastMoveTime = Time.fixedTime;
                 }
             }
+            Profiler.EndSample();
 
+            Profiler.BeginSample("Resolve collision");
             for (int i = 0; i < Iterations; i++)
             {
-                foreach (var unit in units)
+                for (int unitIdx = 0; unitIdx < UnitStore.Count; unitIdx++)
                 {
-                    foreach (var neighbor in neighborDictionary[unit])
+                    var unitComponent = UnitStore.Archetypes[unitIdx].UnitComponent;
+                    foreach (var neighbor in neighborDictionary[unitComponent.gameObject])
                     {
-                        ResolveCollision(unit, neighbor);
+                        ResolveCollision(unitComponent.gameObject, neighbor);
                     }
                 }
             }
+            Profiler.EndSample();
 
-            foreach (var unit in units)
+            Profiler.BeginSample("Update orientation");
+            for (int i = 0; i < UnitStore.Count; i++)
             {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
+                var unitComponent = UnitStore.Archetypes[i].UnitComponent;
                 if (unitComponent.Kinematic.Velocity.sqrMagnitude > Mathf.Epsilon)
                 {
                     var orientation = MathUtil.NormalizeOrientation(
@@ -724,6 +753,7 @@ namespace RoguelikeRTS
                     unitComponent.Kinematic.Orientation = orientation;
                 }
             }
+            Profiler.EndSample();
         }
 
         private void DecidePassivePhysicsAction(GameObject unit, UnitComponent unitComponent)
@@ -737,7 +767,8 @@ namespace RoguelikeRTS
 
             foreach (var neighbor in neighbors)
             {
-                var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+                var neighborUnitComponent = UnitStore.GetArchetype(neighbor).UnitComponent;
+
                 if (neighborUnitComponent.Owner != unitComponent.Owner)
                 {
                     continue;
@@ -797,8 +828,8 @@ namespace RoguelikeRTS
 
         private void ResolveCollision(GameObject unit, GameObject neighbor)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
-            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
+            var neighborUnitComponent = UnitStore.GetArchetype(neighbor).UnitComponent;
 
             var relativeDir = unit.transform.position - neighbor.transform.position;
             relativeDir.y = 0;
@@ -839,22 +870,25 @@ namespace RoguelikeRTS
 
         private bool EnemyCollisionConstraints(GameObject unit, GameObject neighbor)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
-            var neighborComponent = neighbor.FetchComponent<UnitComponent>();
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
+            var neighborUnitComponent = UnitStore.GetArchetype(neighbor).UnitComponent;
 
-            if (unitComponent.Owner == neighborComponent.Owner)
+            if (unitComponent.Owner == neighborUnitComponent.Owner)
             {
                 return true;
             }
 
-            return (!unitComponent.BasicMovement.Resolved && neighborComponent.BasicMovement.Resolved)
-                || (unitComponent.BasicMovement.Resolved && unitComponent.BasicMovement.LastPushedByFriendlyNeighborTime >= neighborComponent.BasicMovement.LastPushedByFriendlyNeighborTime && neighborComponent.BasicMovement.Resolved);
+            return (!unitComponent.BasicMovement.Resolved && neighborUnitComponent.BasicMovement.Resolved)
+                || (unitComponent.BasicMovement.Resolved
+                    && unitComponent.BasicMovement.LastPushedByFriendlyNeighborTime >= neighborUnitComponent.BasicMovement.LastPushedByFriendlyNeighborTime
+                    && neighborUnitComponent.BasicMovement.Resolved);
         }
 
         private bool AllyCollisionConstraints(GameObject unit, GameObject neighbor)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
-            var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
+            var neighborUnitComponent = UnitStore.GetArchetype(neighbor).UnitComponent;
+
 
             if (unitComponent.Owner != neighborUnitComponent.Owner)
             {
@@ -887,7 +921,7 @@ namespace RoguelikeRTS
 
         private bool TriggerStop(GameObject unit, MoveGroup moveGroup)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
 
             if (ArrivedAtTarget(unit))
             {
@@ -917,7 +951,8 @@ namespace RoguelikeRTS
                         // Important subcase 
                         // - If units of the same group are colliding, near the destination, and going in opposite direction
                         // - If neighboring unit in same group has reached the destination
-                        var neighborUnitComponent = neighbor.FetchComponent<UnitComponent>();
+                        var neighborUnitComponent = UnitStore.GetArchetype(neighbor).UnitComponent;
+
                         if (IsColliding(unit, neighbor))
                         {
                             var unitVelocity = unitComponent.Kinematic.Velocity.normalized;
@@ -947,11 +982,11 @@ namespace RoguelikeRTS
             {
                 if (overlap.gameObject != unit)
                 {
-                    var unitComponent = overlap.gameObject.FetchComponent<UnitComponent>();
+                    var overlapUnitComponent = UnitStore.GetArchetype(overlap.gameObject).UnitComponent;
                     // Ignore if target position is right on this unit
-                    if (unitComponent.BasicMovement.HoldingPosition)
+                    if (overlapUnitComponent.BasicMovement.HoldingPosition)
                     {
-                        blockers.Add(unitComponent.gameObject);
+                        blockers.Add(overlapUnitComponent.gameObject);
                     }
                 }
             }
@@ -961,7 +996,7 @@ namespace RoguelikeRTS
 
         public void ForceStop(GameObject unit)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
             unitComponent.BasicMovement.TargetPosition = unit.transform.position;
             unitComponent.Kinematic.Velocity = Vector3.zero;
         }
@@ -1024,25 +1059,21 @@ namespace RoguelikeRTS
 
         private List<GameObject> GetNeighbors(GameObject unit)
         {
-            var units = Entity.Fetch(new List<System.Type>()
-            {
-                typeof(UnitComponent)
-            });
-
-            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
             var unitRadius = unitComponent.Radius;
 
             var neighbors = new List<GameObject>();
 
-            foreach (var neighbor in units)
+            for (int i = 0; i < UnitStore.Count; i++)
             {
+                var neighborUnitComponent = UnitStore.Archetypes[i].UnitComponent;
+                var neighbor = neighborUnitComponent.gameObject;
                 if (neighbor == unit)
                 {
                     continue;
                 }
 
-                var neighborComponent = neighbor.GetComponent<UnitComponent>();
-                var neighborRadius = neighborComponent.Radius;
+                var neighborRadius = neighborUnitComponent.Radius;
 
                 var dst = (unit.transform.position - neighbor.transform.position).magnitude;
                 dst -= neighborRadius + unitRadius;
@@ -1062,34 +1093,41 @@ namespace RoguelikeRTS
             var objs = GameObject.FindGameObjectsWithTag(Util.Tags.PlayerUnit);
             foreach (var obj in objs)
             {
-                EntityFactory.RegisterItem(obj);
-            }
+                var unitComponent = obj.GetComponent<UnitComponent>();
+                unitComponent.Kinematic.Position = obj.transform.position;
+                unitComponent.BasicMovement.TargetPosition = obj.transform.position;
 
-            var units = Entity.Fetch(new List<System.Type>() { typeof(UnitComponent) });
+                UnitStore.Add(obj, new UnitArchetype()
+                {
+                    UnitComponent = unitComponent
+                });
 
-            foreach (var unit in units)
-            {
-                var unitComponent = unit.FetchComponent<UnitComponent>();
-                unitComponent.Kinematic.Position = unit.transform.position;
-                unitComponent.BasicMovement.TargetPosition = unit.transform.position;
+                if (obj.GetComponent<PlayerComponent>())
+                {
+                    PlayerUnitStore.Add(obj, new UnitArchetype()
+                    {
+                        UnitComponent = unitComponent
+                    });
+                }
             }
+        }
+
+        void OnDestroy()
+        {
+            UnitStore = null;
         }
 
         private void OnDrawGizmos()
         {
-            if (Entity != null)
+            if (UnitStore != null)
             {
-                var units = Entity.Fetch(new List<System.Type>()
-            {
-                typeof(UnitComponent)
-            });
-
-                foreach (var unit in units)
+                for (int i = 0; i < UnitStore.Count; i++)
                 {
-                    var unitComponent = unit.FetchComponent<UnitComponent>();
+                    var unitArchetype = UnitStore.Archetypes[i];
+                    var unitComponent = unitArchetype.UnitComponent;
                     var forward = Quaternion.Euler(0, unitComponent.Kinematic.Orientation, 0) * Vector3.forward;
                     Debug.DrawRay(
-                        unit.transform.position + 0.5f * forward * unitComponent.Radius,
+                        unitComponent.gameObject.transform.position + 0.5f * forward * unitComponent.Radius,
                         forward * unitComponent.Radius * 0.5f,
                         Color.red);
                 }
@@ -1098,7 +1136,7 @@ namespace RoguelikeRTS
 
         private AvoidanceType GetAvoidanceType(GameObject unit)
         {
-            var unitComponent = unit.FetchComponent<UnitComponent>();
+            var unitComponent = UnitStore.GetArchetype(unit).UnitComponent;
             if (unitComponent.Kinematic.Velocity.sqrMagnitude > 0)
             {
                 return AvoidanceType.Moving;
@@ -1131,4 +1169,37 @@ namespace RoguelikeRTS
         public float TimeHorizonAgents;
         public float TimeHorizonObstacles;
     }
+}
+
+public class ReferenceStore<T>
+{
+    public Dictionary<int, int> References;
+    public T[] Archetypes;
+    public int Count;
+
+    public ReferenceStore(int size)
+    {
+        References = new Dictionary<int, int>();
+        Archetypes = new T[size];
+        Count = 0;
+    }
+
+    public void Add(GameObject obj, T archetype)
+    {
+        References.Add(obj.GetInstanceID(), Count);
+        Archetypes[Count] = archetype;
+        Count++;
+    }
+
+    public T GetArchetype(GameObject obj)
+    {
+        var instanceId = obj.GetInstanceID();
+        var archetypeId = References[instanceId];
+        return Archetypes[archetypeId];
+    }
+}
+
+public struct UnitArchetype
+{
+    public UnitComponent UnitComponent;
 }
