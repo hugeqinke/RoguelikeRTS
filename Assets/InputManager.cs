@@ -4,23 +4,12 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using RoguelikeRTS;
 
 public enum InputState
 {
     Idle,
     Selecting,
     BoxSelect
-}
-
-public class MoveGroup
-{
-    public HashSet<GameObject> Units;
-
-    public MoveGroup()
-    {
-        Units = new HashSet<GameObject>();
-    }
 }
 
 public class InputManager : MonoBehaviour
@@ -32,17 +21,12 @@ public class InputManager : MonoBehaviour
     private SelectingContext _selectingContext;
     private BoxSelectContext _boxSelectContext;
 
-    public HashSet<MoveGroup> MoveGroups;
-    public Dictionary<GameObject, MoveGroup> MoveGroupMap;
-
     public Simulator Simulator;
 
     // Start is called before the first frame update
     void Start()
     {
         _selectedUnits = new HashSet<GameObject>();
-        MoveGroups = new HashSet<MoveGroup>();
-        MoveGroupMap = new Dictionary<GameObject, MoveGroup>();
     }
 
     // Update is called once per frame
@@ -66,46 +50,11 @@ public class InputManager : MonoBehaviour
             // Hold position
             foreach (var unit in _selectedUnits)
             {
-                var unitComponent = Simulator.UnitStore.GetArchetype(unit).UnitComponent;
-                Simulator.Instance.ForceStop(unit);
-                unitComponent.BasicMovement.HoldingPosition = true;
+                var unitComponent = Simulator.UnitControllers[unit];
+                // Simulator.Instance.ForceStop(unit);
+                // unitComponent.BasicMovement.HoldingPosition = true;
             }
         }
-    }
-
-    private void LateUpdate()
-    {
-        var resolvedGroups = new List<MoveGroup>();
-        foreach (var moveGroup in MoveGroups)
-        {
-            if (IsMoveGroupResolved(moveGroup))
-            {
-                resolvedGroups.Add(moveGroup);
-            }
-        }
-
-        foreach (var group in resolvedGroups)
-        {
-            MoveGroups.Remove(group);
-            foreach (var unit in group.Units)
-            {
-                MoveGroupMap.Remove(unit);
-            }
-        }
-    }
-
-    private bool IsMoveGroupResolved(MoveGroup moveGroup)
-    {
-        foreach (var unit in moveGroup.Units)
-        {
-            var unitComponent = Simulator.UnitStore.GetArchetype(unit).UnitComponent;
-            if (!unitComponent.BasicMovement.Resolved)
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     // State processors
@@ -201,12 +150,12 @@ public class InputManager : MonoBehaviour
             ClearCurrentSelection();
             var frustrum = CreateFrustrum();
 
-            for (int i = 0; i < Simulator.PlayerUnitStore.Count; i++)
+            foreach (var playerUnitIdx in Simulator.PlayerIndexMap)
             {
-                var unit = Simulator.PlayerUnitStore.Archetypes[i].UnitComponent;
-                if (IsOnFrustrum(frustrum, unit.gameObject))
+                var playerUnit = playerUnitIdx.Key;
+                if (IsOnFrustrum(frustrum, playerUnit))
                 {
-                    AddToSelection(unit.gameObject);
+                    AddToSelection(playerUnit);
                 }
             }
 
@@ -219,7 +168,7 @@ public class InputManager : MonoBehaviour
     {
         foreach (var unit in units)
         {
-            var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
+            var unitComponent = Simulator.UnitControllers[unit];
             unitComponent.Kinematic.Velocity = Vector3.zero;
 
             unitComponent.BasicMovement.Resolved = false;
@@ -245,15 +194,15 @@ public class InputManager : MonoBehaviour
 
         foreach (var unit in _selectedUnits)
         {
-            var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
+            var unitController = Simulator.UnitControllers[unit];
             var unitPosition = math.mul(inverseBasisSpace, new float2(unit.transform.position.x, unit.transform.position.z));
 
             var points = new List<float2>()
             {
-                unitPosition + new float2(0, 1) * unitComponent.Radius,
-                unitPosition - new float2(0, 1) * unitComponent.Radius,
-                unitPosition + new float2(1, 0) * unitComponent.Radius,
-                unitPosition - new float2(1, 0) * unitComponent.Radius
+                unitPosition + new float2(0, 1) * unitController.Radius,
+                unitPosition - new float2(0, 1) * unitController.Radius,
+                unitPosition + new float2(1, 0) * unitController.Radius,
+                unitPosition - new float2(1, 0) * unitController.Radius
             };
 
             // Debug.DrawRay(Vector3.zero, unit.transform.position, Color.blue, 10);
@@ -365,14 +314,14 @@ public class InputManager : MonoBehaviour
 
     private bool IsOnFrustrum(MathUtil.Frustrum frustrum, GameObject unit)
     {
-        var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
         var position = unit.transform.position;
 
         var inFrustrum = false;
-        foreach (var trigger in unitComponent.SelectionTriggers)
+        var unitController = Simulator.UnitControllers[unit];
+        foreach (var trigger in unitController.SelectionTriggers)
         {
             var center = position + trigger.center;
-            var radius = unitComponent.transform.localScale.x * trigger.radius;
+            var radius = unitController.transform.localScale.x * trigger.radius;
             inFrustrum |= MathUtil.OnPositiveHalfPlane(frustrum.LeftPlane, center, radius)
                         && MathUtil.OnPositiveHalfPlane(frustrum.RightPlane, center, radius)
                         && MathUtil.OnPositiveHalfPlane(frustrum.BottomPlane, center, radius)
@@ -450,78 +399,78 @@ public class InputManager : MonoBehaviour
         return frustrum;
     }
 
-    private bool IssueAttackOrder()
-    {
-        ResetKinematics(_selectedUnits);
+    // private bool IssueAttackOrder()
+    // {
+    //     ResetKinematics(_selectedUnits);
 
-        var screenPoint = Mouse.current.position.ReadValue();
-        var ray = Camera.main.ScreenPointToRay(screenPoint);
+    //     var screenPoint = Mouse.current.position.ReadValue();
+    //     var ray = Camera.main.ScreenPointToRay(screenPoint);
 
-        if (Physics.Raycast(ray, out RaycastHit hit, InputUtils.MaxRaycastDistance, InputUtils.AIUnitLayerMask))
-        {
-            var enemyUnit = hit.collider.gameObject;
+    //     if (Physics.Raycast(ray, out RaycastHit hit, InputUtils.MaxRaycastDistance, InputUtils.AIUnitLayerMask))
+    //     {
+    //         var enemyUnit = hit.collider.gameObject;
 
-            // Set move
-            var positions = CalculateInnerPosition(enemyUnit.transform.position);
-            SetMoveParameters(positions);
+    //         // Set move
+    //         var positions = CalculateInnerPosition(enemyUnit.transform.position);
+    //         SetMoveParameters(positions);
 
-            // Set combat
-            foreach (var unit in _selectedUnits)
-            {
-                var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
-                unitComponent.Target = enemyUnit;
-            }
+    //         // Set combat
+    //         foreach (var unit in _selectedUnits)
+    //         {
+    //             var unitComponent = Simulator.UnitControllers[unit];
+    //             unitComponent.Target = enemyUnit;
+    //         }
 
-            return true;
-        }
+    //         return true;
+    //     }
 
-        return false;
-    }
+    //     return false;
+    // }
 
-    private void SetMoveParameters(Dictionary<GameObject, Vector3> positions)
-    {
-        var moveGroup = new MoveGroup();
-        foreach (var unit in _selectedUnits)
-        {
-            // Update unit state
-            var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
-            unitComponent.BasicMovement.TargetPosition = positions[unit];
-            unitComponent.BasicMovement.RelativeDeltaStart = positions[unit] - unit.transform.position;
+    // private void SetMoveParameters(Dictionary<GameObject, Vector3> positions)
+    // {
+    //     var moveGroup = new MoveGroup();
+    //     foreach (var unit in _selectedUnits)
+    //     {
+    //         // Update unit state
+    //         var unitComponent = Simulator.UnitControllers[unit];
+    //         unitComponent.BasicMovement.TargetPosition = positions[unit];
+    //         unitComponent.BasicMovement.RelativeDeltaStart = positions[unit] - unit.transform.position;
 
-            var dir = positions[unit] - unit.transform.position;
-            if (dir.sqrMagnitude > Mathf.Epsilon)
-            {
-                unitComponent.Kinematic.Orientation = Vector3.SignedAngle(
-                    Vector3.forward,
-                    dir,
-                    Vector3.up
-                );
-            }
+    //         var dir = positions[unit] - unit.transform.position;
+    //         if (dir.sqrMagnitude > Mathf.Epsilon)
+    //         {
+    //             unitComponent.Kinematic.Orientation = Vector3.SignedAngle(
+    //                 Vector3.forward,
+    //                 dir,
+    //                 Vector3.up
+    //             );
+    //         }
 
-            // Clear from old movegroup
-            if (MoveGroupMap.ContainsKey(unit))
-            {
-                var oldMoveGroup = MoveGroupMap[unit];
-                if (oldMoveGroup.Units.Contains(unit))
-                {
-                    oldMoveGroup.Units.Remove(unit);
-                }
+    //         // Clear from old movegroup
+    //         if (MoveGroupMap.ContainsKey(unit))
+    //         {
+    //             var oldMoveGroup = MoveGroupMap[unit];
+    //             if (oldMoveGroup.Units.Contains(unit))
+    //             {
+    //                 oldMoveGroup.Units.Remove(unit);
+    //             }
 
-                MoveGroupMap.Remove(unit);
-            }
+    //             MoveGroupMap.Remove(unit);
+    //         }
 
-            // Add to new MoveGroup
-            moveGroup.Units.Add(unit);
-            MoveGroupMap.Add(unit, moveGroup);
-        }
+    //         // Add to new MoveGroup
+    //         moveGroup.Units.Add(unit);
+    //         MoveGroupMap.Add(unit, moveGroup);
+    //     }
 
-        MoveGroups.Add(moveGroup);
-    }
+    //     MoveGroups.Add(moveGroup);
+    // }
 
     private void IssueMoveOrder()
     {
         // Reset the states of all selected units
-        ResetKinematics(_selectedUnits);
+        Simulator.ResetMovement(_selectedUnits);
 
         var ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
         if (Physics.Raycast(ray, out RaycastHit hitInfo, 600, InputUtils.GroundLayerMask))
@@ -531,7 +480,8 @@ public class InputManager : MonoBehaviour
 
             // Update target positions
             var positions = CalculateTargetPositions(point);
-            SetMoveParameters(positions);
+            Simulator.SetMovementValues(positions);
+            Simulator.UpdateMoveGroup(_selectedUnits);
         }
     }
 
@@ -553,10 +503,10 @@ public class InputManager : MonoBehaviour
     // Helper functions
     private void IssueOrder()
     {
-        if (!IssueAttackOrder())
-        {
-            IssueMoveOrder();
-        }
+        // if (!IssueAttackOrder())
+        // {
+        IssueMoveOrder();
+        // }
     }
 
     private void ClearCurrentSelection()
@@ -571,7 +521,7 @@ public class InputManager : MonoBehaviour
 
     private void DeselectUnit(GameObject unit)
     {
-        var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
+        var unitComponent = Simulator.UnitControllers[unit];
         unitComponent.SelectionHighlight.gameObject.SetActive(false);
     }
 
@@ -581,7 +531,7 @@ public class InputManager : MonoBehaviour
         {
             _selectedUnits.Add(unit);
 
-            var unitComponent = Simulator.PlayerUnitStore.GetArchetype(unit).UnitComponent;
+            var unitComponent = Simulator.UnitControllers[unit];
             unitComponent.SelectionHighlight.gameObject.SetActive(true);
         }
     }
