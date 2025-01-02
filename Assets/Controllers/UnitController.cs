@@ -37,20 +37,14 @@ public struct Config
     public float Radius;
 
     // Movement
-    public float Force;
     public float MaxSpeed;
     public float Mass;
-    public float Friction;
     public float MaxAcceleration;
-    public float MaxDeceleration;
     public float ReturnRadius;
     public float TimeHorizon;
-
-    // Arrive
-    public float SlowRadius;
-    public float StopRadius;
 }
 
+[System.Serializable]
 public struct MovementComponent
 {
     // Meta
@@ -59,6 +53,7 @@ public struct MovementComponent
 
     // Config
     public float MaxSpeed;
+    public float Acceleration;
     public float ReturnRadius;
     public float TimeHorizon;
 
@@ -70,20 +65,12 @@ public struct MovementComponent
     public int SidePreference; // Side preference key: -1 -> left / 0 -> none / 1 -> right
 
     // Physics
-    public float Force;
     public float Mass;
-    public float Friction;
-    public float3 PreferredPosition;
-    public float3 PreferredVelocity;
     public float3 Velocity;
     public float3 Position;
+    public float3 OldPosition;
+    public float3 TargetPosition;
     public float Orientation;
-
-    // Arrive
-    public float SlowRadius;
-    public float SlowRadiusSq;
-    public float StopRadius;
-    public float StopRadiusSq;
 
     public MovementComponent(UnitController unitController)
     {
@@ -91,6 +78,7 @@ public struct MovementComponent
         Radius = unitController.Config.Radius;
 
         MaxSpeed = unitController.Config.MaxSpeed;
+        Acceleration = unitController.Config.MaxAcceleration;
         ReturnRadius = unitController.Config.ReturnRadius;
         TimeHorizon = unitController.Config.TimeHorizon;
 
@@ -100,20 +88,12 @@ public struct MovementComponent
         LastMoveTime = -math.INFINITY;
         SidePreference = 0;
 
-        Force = unitController.Config.Force;
         Mass = unitController.Config.Mass;
-        Friction = unitController.Config.Friction;
-        PreferredPosition = unitController.transform.position;
-        PreferredVelocity = float3.zero;
         Velocity = float3.zero;
         Position = unitController.transform.position;
+        OldPosition = unitController.transform.position;
+        TargetPosition = unitController.transform.position;
         Orientation = 0;
-
-        SlowRadius = unitController.Config.SlowRadius;
-        StopRadius = unitController.Config.StopRadius;
-
-        SlowRadiusSq = SlowRadius * SlowRadius;
-        StopRadiusSq = StopRadius * StopRadius;
     }
 }
 

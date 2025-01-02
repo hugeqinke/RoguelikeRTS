@@ -37,7 +37,6 @@ public class TestSimulator : MonoBehaviour
                 unit.transform.position += unit.Velocity * sdt;
             }
 
-            // Find constraints
             for (int i = 0; i < TestUnits.Count - 1; i++)
             {
                 for (int j = i + 1; j < TestUnits.Count; j++)

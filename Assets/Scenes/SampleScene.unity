@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.4465788, g: 0.49641287, b: 0.5748173, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -133,7 +133,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1078851}
   - component: {fileID: 1078850}
-  - component: {fileID: 1078849}
   - component: {fileID: 1078848}
   - component: {fileID: 1078847}
   - component: {fileID: 1078846}
@@ -198,18 +197,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1078849
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1078845}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1078850
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -222,17 +209,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1969456968}
   SelectionTriggers:
   - {fileID: 1078847}
   - {fileID: 1078846}
+  SelectionHighlight: {fileID: 1969456968}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -244,6 +227,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -253,6 +237,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1078851
 Transform:
   m_ObjectHideFlags: 0
@@ -363,7 +355,6 @@ GameObject:
   m_Component:
   - component: {fileID: 22671318}
   - component: {fileID: 22671317}
-  - component: {fileID: 22671316}
   - component: {fileID: 22671315}
   - component: {fileID: 22671314}
   - component: {fileID: 22671313}
@@ -428,18 +419,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &22671316
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 22671312}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &22671317
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -452,17 +431,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 502193508}
   SelectionTriggers:
   - {fileID: 22671314}
   - {fileID: 22671313}
+  SelectionHighlight: {fileID: 502193508}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -474,6 +449,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -483,6 +459,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &22671318
 Transform:
   m_ObjectHideFlags: 0
@@ -510,7 +494,6 @@ GameObject:
   m_Component:
   - component: {fileID: 28741865}
   - component: {fileID: 28741864}
-  - component: {fileID: 28741863}
   - component: {fileID: 28741862}
   - component: {fileID: 28741861}
   m_Layer: 8
@@ -562,18 +545,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &28741863
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 28741860}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &28741864
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -586,17 +557,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1243080097}
   SelectionTriggers:
   - {fileID: 28741862}
   - {fileID: 28741861}
+  SelectionHighlight: {fileID: 1243080097}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -608,6 +575,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -617,6 +585,14 @@ MonoBehaviour:
   AttackRadius: 0
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 1
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &28741865
 Transform:
   m_ObjectHideFlags: 0
@@ -979,7 +955,6 @@ GameObject:
   m_Component:
   - component: {fileID: 82803175}
   - component: {fileID: 82803174}
-  - component: {fileID: 82803173}
   - component: {fileID: 82803171}
   - component: {fileID: 82803170}
   m_Layer: 8
@@ -1031,18 +1006,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &82803173
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 82803169}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &82803174
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1055,17 +1018,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1589119433}
   SelectionTriggers:
   - {fileID: 82803171}
   - {fileID: 82803170}
+  SelectionHighlight: {fileID: 1589119433}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -1077,6 +1036,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -1086,6 +1046,14 @@ MonoBehaviour:
   AttackRadius: 0
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 1
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &82803175
 Transform:
   m_ObjectHideFlags: 0
@@ -1271,7 +1239,6 @@ GameObject:
   m_Component:
   - component: {fileID: 112670160}
   - component: {fileID: 112670159}
-  - component: {fileID: 112670158}
   - component: {fileID: 112670157}
   - component: {fileID: 112670156}
   m_Layer: 8
@@ -1323,18 +1290,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &112670158
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 112670155}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &112670159
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1347,17 +1302,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1189064900}
   SelectionTriggers:
   - {fileID: 112670157}
   - {fileID: 112670156}
+  SelectionHighlight: {fileID: 1189064900}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -1369,6 +1320,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -1378,6 +1330,14 @@ MonoBehaviour:
   AttackRadius: 0
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 1
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &112670160
 Transform:
   m_ObjectHideFlags: 0
@@ -1609,7 +1569,6 @@ GameObject:
   m_Component:
   - component: {fileID: 137356697}
   - component: {fileID: 137356696}
-  - component: {fileID: 137356695}
   - component: {fileID: 137356694}
   - component: {fileID: 137356693}
   - component: {fileID: 137356692}
@@ -1674,18 +1633,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &137356695
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 137356691}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &137356696
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1698,17 +1645,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1245659835}
   SelectionTriggers:
   - {fileID: 137356693}
   - {fileID: 137356692}
+  SelectionHighlight: {fileID: 1245659835}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -1720,6 +1663,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -1729,6 +1673,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &137356697
 Transform:
   m_ObjectHideFlags: 0
@@ -1960,7 +1912,6 @@ GameObject:
   m_Component:
   - component: {fileID: 181680234}
   - component: {fileID: 181680233}
-  - component: {fileID: 181680232}
   - component: {fileID: 181680231}
   - component: {fileID: 181680230}
   - component: {fileID: 181680229}
@@ -2025,18 +1976,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &181680232
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 181680228}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &181680233
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2049,17 +1988,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 931147999}
   SelectionTriggers:
   - {fileID: 181680230}
   - {fileID: 181680229}
+  SelectionHighlight: {fileID: 931147999}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -2071,6 +2006,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -2080,6 +2016,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &181680234
 Transform:
   m_ObjectHideFlags: 0
@@ -2397,7 +2341,6 @@ GameObject:
   m_Component:
   - component: {fileID: 229650840}
   - component: {fileID: 229650839}
-  - component: {fileID: 229650838}
   - component: {fileID: 229650837}
   - component: {fileID: 229650836}
   m_Layer: 8
@@ -2449,18 +2392,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &229650838
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 229650835}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &229650839
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2473,17 +2404,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1305848277}
   SelectionTriggers:
   - {fileID: 229650837}
   - {fileID: 229650836}
+  SelectionHighlight: {fileID: 1305848277}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -2495,6 +2422,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -2504,6 +2432,14 @@ MonoBehaviour:
   AttackRadius: 0
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 1
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &229650840
 Transform:
   m_ObjectHideFlags: 0
@@ -2531,7 +2467,6 @@ GameObject:
   m_Component:
   - component: {fileID: 235366736}
   - component: {fileID: 235366735}
-  - component: {fileID: 235366734}
   - component: {fileID: 235366733}
   - component: {fileID: 235366732}
   - component: {fileID: 235366731}
@@ -2596,18 +2531,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &235366734
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 235366730}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &235366735
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2620,17 +2543,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 31697158}
   SelectionTriggers:
   - {fileID: 235366732}
   - {fileID: 235366731}
+  SelectionHighlight: {fileID: 31697158}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -2642,6 +2561,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -2651,6 +2571,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &235366736
 Transform:
   m_ObjectHideFlags: 0
@@ -2678,7 +2606,6 @@ GameObject:
   m_Component:
   - component: {fileID: 238229485}
   - component: {fileID: 238229484}
-  - component: {fileID: 238229483}
   - component: {fileID: 238229482}
   - component: {fileID: 238229481}
   - component: {fileID: 238229480}
@@ -2743,18 +2670,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &238229483
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 238229479}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &238229484
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2767,17 +2682,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 729200514}
   SelectionTriggers:
   - {fileID: 238229481}
   - {fileID: 238229480}
+  SelectionHighlight: {fileID: 729200514}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -2789,6 +2700,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -2798,6 +2710,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &238229485
 Transform:
   m_ObjectHideFlags: 0
@@ -3104,7 +3024,6 @@ GameObject:
   m_Component:
   - component: {fileID: 328384249}
   - component: {fileID: 328384248}
-  - component: {fileID: 328384247}
   - component: {fileID: 328384246}
   - component: {fileID: 328384245}
   - component: {fileID: 328384244}
@@ -3169,18 +3088,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &328384247
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 328384243}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &328384248
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3193,17 +3100,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 656400049}
   SelectionTriggers:
   - {fileID: 328384245}
   - {fileID: 328384244}
+  SelectionHighlight: {fileID: 656400049}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -3215,6 +3118,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -3224,6 +3128,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &328384249
 Transform:
   m_ObjectHideFlags: 0
@@ -3455,7 +3367,6 @@ GameObject:
   m_Component:
   - component: {fileID: 347477588}
   - component: {fileID: 347477587}
-  - component: {fileID: 347477586}
   - component: {fileID: 347477585}
   - component: {fileID: 347477584}
   - component: {fileID: 347477583}
@@ -3520,18 +3431,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &347477586
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 347477582}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &347477587
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3544,17 +3443,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1597639222}
   SelectionTriggers:
   - {fileID: 347477584}
   - {fileID: 347477583}
+  SelectionHighlight: {fileID: 1597639222}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -3566,6 +3461,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -3575,6 +3471,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &347477588
 Transform:
   m_ObjectHideFlags: 0
@@ -3602,7 +3506,6 @@ GameObject:
   m_Component:
   - component: {fileID: 407422364}
   - component: {fileID: 407422363}
-  - component: {fileID: 407422362}
   - component: {fileID: 407422361}
   - component: {fileID: 407422360}
   - component: {fileID: 407422359}
@@ -3667,18 +3570,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &407422362
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 407422358}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &407422363
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3691,17 +3582,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 788007048}
   SelectionTriggers:
   - {fileID: 407422360}
   - {fileID: 407422359}
+  SelectionHighlight: {fileID: 788007048}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -3713,6 +3600,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -3722,6 +3610,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &407422364
 Transform:
   m_ObjectHideFlags: 0
@@ -3749,7 +3645,6 @@ GameObject:
   m_Component:
   - component: {fileID: 420919717}
   - component: {fileID: 420919716}
-  - component: {fileID: 420919715}
   - component: {fileID: 420919714}
   - component: {fileID: 420919713}
   - component: {fileID: 420919712}
@@ -3814,18 +3709,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &420919715
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 420919711}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &420919716
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3838,17 +3721,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 251230729}
   SelectionTriggers:
   - {fileID: 420919713}
   - {fileID: 420919712}
+  SelectionHighlight: {fileID: 251230729}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -3860,6 +3739,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -3869,6 +3749,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &420919717
 Transform:
   m_ObjectHideFlags: 0
@@ -4328,7 +4216,6 @@ GameObject:
   m_Component:
   - component: {fileID: 446102749}
   - component: {fileID: 446102748}
-  - component: {fileID: 446102747}
   - component: {fileID: 446102746}
   - component: {fileID: 446102745}
   - component: {fileID: 446102744}
@@ -4393,18 +4280,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &446102747
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 446102743}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &446102748
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4417,17 +4292,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1923737601}
   SelectionTriggers:
   - {fileID: 446102745}
   - {fileID: 446102744}
+  SelectionHighlight: {fileID: 1923737601}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -4439,6 +4310,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -4448,6 +4320,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &446102749
 Transform:
   m_ObjectHideFlags: 0
@@ -4510,6 +4390,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   BoxRenderer: {fileID: 527967732}
+  Simulator: {fileID: 886160921}
 --- !u!1 &468971699
 GameObject:
   m_ObjectHideFlags: 0
@@ -5019,7 +4900,6 @@ GameObject:
   m_Component:
   - component: {fileID: 551808972}
   - component: {fileID: 551808971}
-  - component: {fileID: 551808970}
   - component: {fileID: 551808969}
   - component: {fileID: 551808968}
   m_Layer: 8
@@ -5071,18 +4951,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &551808970
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 551808967}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &551808971
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5095,17 +4963,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1475080111}
   SelectionTriggers:
   - {fileID: 551808969}
   - {fileID: 551808968}
+  SelectionHighlight: {fileID: 1475080111}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -5117,6 +4981,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -5126,6 +4991,14 @@ MonoBehaviour:
   AttackRadius: 0
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 1
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &551808972
 Transform:
   m_ObjectHideFlags: 0
@@ -5413,7 +5286,6 @@ GameObject:
   m_Component:
   - component: {fileID: 605573018}
   - component: {fileID: 605573017}
-  - component: {fileID: 605573016}
   - component: {fileID: 605573015}
   - component: {fileID: 605573014}
   - component: {fileID: 605573013}
@@ -5478,18 +5350,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &605573016
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 605573012}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &605573017
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5502,17 +5362,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1302910360}
   SelectionTriggers:
   - {fileID: 605573014}
   - {fileID: 605573013}
+  SelectionHighlight: {fileID: 1302910360}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -5524,6 +5380,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -5533,6 +5390,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &605573018
 Transform:
   m_ObjectHideFlags: 0
@@ -5560,7 +5425,6 @@ GameObject:
   m_Component:
   - component: {fileID: 610951466}
   - component: {fileID: 610951465}
-  - component: {fileID: 610951464}
   - component: {fileID: 610951463}
   - component: {fileID: 610951462}
   m_Layer: 8
@@ -5612,18 +5476,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &610951464
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 610951461}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &610951465
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5636,17 +5488,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1142026108}
   SelectionTriggers:
   - {fileID: 610951463}
   - {fileID: 610951462}
+  SelectionHighlight: {fileID: 1142026108}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -5658,6 +5506,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -5667,6 +5516,14 @@ MonoBehaviour:
   AttackRadius: 0
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 1
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &610951466
 Transform:
   m_ObjectHideFlags: 0
@@ -6509,7 +6366,6 @@ GameObject:
   m_Component:
   - component: {fileID: 678017008}
   - component: {fileID: 678017007}
-  - component: {fileID: 678017006}
   - component: {fileID: 678017005}
   - component: {fileID: 678017004}
   - component: {fileID: 678017003}
@@ -6574,18 +6430,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &678017006
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 678017002}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &678017007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6598,17 +6442,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1186682407}
   SelectionTriggers:
   - {fileID: 678017004}
   - {fileID: 678017003}
+  SelectionHighlight: {fileID: 1186682407}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -6620,6 +6460,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -6629,6 +6470,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &678017008
 Transform:
   m_ObjectHideFlags: 0
@@ -7361,7 +7210,6 @@ GameObject:
   m_Component:
   - component: {fileID: 708917366}
   - component: {fileID: 708917365}
-  - component: {fileID: 708917364}
   - component: {fileID: 708917363}
   - component: {fileID: 708917362}
   - component: {fileID: 708917361}
@@ -7426,18 +7274,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &708917364
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 708917360}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &708917365
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7450,17 +7286,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 442211609}
   SelectionTriggers:
   - {fileID: 708917362}
   - {fileID: 708917361}
+  SelectionHighlight: {fileID: 442211609}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -7472,6 +7304,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -7481,6 +7314,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &708917366
 Transform:
   m_ObjectHideFlags: 0
@@ -7508,7 +7349,6 @@ GameObject:
   m_Component:
   - component: {fileID: 721428737}
   - component: {fileID: 721428736}
-  - component: {fileID: 721428735}
   - component: {fileID: 721428734}
   - component: {fileID: 721428733}
   - component: {fileID: 721428732}
@@ -7573,18 +7413,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &721428735
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 721428731}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &721428736
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7597,17 +7425,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1741811924}
   SelectionTriggers:
   - {fileID: 721428733}
   - {fileID: 721428732}
+  SelectionHighlight: {fileID: 1741811924}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -7619,6 +7443,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -7628,6 +7453,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &721428737
 Transform:
   m_ObjectHideFlags: 0
@@ -7805,7 +7638,6 @@ GameObject:
   m_Component:
   - component: {fileID: 772345635}
   - component: {fileID: 772345634}
-  - component: {fileID: 772345633}
   - component: {fileID: 772345632}
   - component: {fileID: 772345631}
   - component: {fileID: 772345630}
@@ -7870,18 +7702,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &772345633
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 772345629}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &772345634
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7894,17 +7714,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 819820537}
   SelectionTriggers:
   - {fileID: 772345631}
   - {fileID: 772345630}
+  SelectionHighlight: {fileID: 819820537}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -7916,6 +7732,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -7925,6 +7742,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &772345635
 Transform:
   m_ObjectHideFlags: 0
@@ -8600,10 +8425,11 @@ Transform:
   m_GameObject: {fileID: 886160919}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.910652, y: -7.2537365, z: -4.196631}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1195440476}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &886160921
@@ -8621,9 +8447,18 @@ MonoBehaviour:
   NeighborScanRadius: 4
   ResponseCoefficient: 1
   InputManager: {fileID: 465716417}
-  Iterations: 5
+  ResolveCollisionIterations: 0
   MovingNeighborRadius: 0.5
   AlertRadius: 2
+  Units: []
+  Transforms: []
+  DBGMediumHash: 0
+  MediumSpatialHashConfig:
+    Rows: 50
+    Columns: 50
+    Size: 1
+    Center: {fileID: 1195440475}
+  Substeps: 1
 --- !u!1 &931147999
 GameObject:
   m_ObjectHideFlags: 0
@@ -8986,7 +8821,6 @@ GameObject:
   m_Component:
   - component: {fileID: 970953177}
   - component: {fileID: 970953176}
-  - component: {fileID: 970953175}
   - component: {fileID: 970953174}
   - component: {fileID: 970953173}
   - component: {fileID: 970953172}
@@ -9051,18 +8885,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &970953175
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 970953171}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &970953176
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9075,17 +8897,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1617705487}
   SelectionTriggers:
   - {fileID: 970953173}
   - {fileID: 970953172}
+  SelectionHighlight: {fileID: 1617705487}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -9097,6 +8915,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -9106,6 +8925,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &970953177
 Transform:
   m_ObjectHideFlags: 0
@@ -9235,7 +9062,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1014620996}
   - component: {fileID: 1014620995}
-  - component: {fileID: 1014620994}
   - component: {fileID: 1014620993}
   - component: {fileID: 1014620992}
   - component: {fileID: 1014620991}
@@ -9300,18 +9126,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1014620994
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1014620990}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1014620995
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9324,17 +9138,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 779187088}
   SelectionTriggers:
   - {fileID: 1014620992}
   - {fileID: 1014620991}
+  SelectionHighlight: {fileID: 779187088}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -9346,6 +9156,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -9355,6 +9166,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1014620996
 Transform:
   m_ObjectHideFlags: 0
@@ -9650,7 +9469,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1056302002}
   - component: {fileID: 1056302001}
-  - component: {fileID: 1056302000}
   - component: {fileID: 1056301999}
   - component: {fileID: 1056301998}
   m_Layer: 8
@@ -9702,18 +9520,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &1056302000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1056301997}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1056302001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9726,17 +9532,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 426191195}
   SelectionTriggers:
   - {fileID: 1056301999}
   - {fileID: 1056301998}
+  SelectionHighlight: {fileID: 426191195}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -9748,6 +9550,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -9757,6 +9560,14 @@ MonoBehaviour:
   AttackRadius: 0
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 1
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1056302002
 Transform:
   m_ObjectHideFlags: 0
@@ -9867,7 +9678,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1081325349}
   - component: {fileID: 1081325348}
-  - component: {fileID: 1081325347}
   - component: {fileID: 1081325346}
   - component: {fileID: 1081325345}
   - component: {fileID: 1081325344}
@@ -9932,18 +9742,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1081325347
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1081325343}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1081325348
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9956,17 +9754,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 2137735538}
   SelectionTriggers:
   - {fileID: 1081325345}
   - {fileID: 1081325344}
+  SelectionHighlight: {fileID: 2137735538}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -9978,6 +9772,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -9987,6 +9782,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1081325349
 Transform:
   m_ObjectHideFlags: 0
@@ -10014,7 +9817,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1089058112}
   - component: {fileID: 1089058111}
-  - component: {fileID: 1089058110}
   - component: {fileID: 1089058109}
   - component: {fileID: 1089058108}
   - component: {fileID: 1089058107}
@@ -10079,18 +9881,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1089058110
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1089058106}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1089058111
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10103,17 +9893,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1104429930}
   SelectionTriggers:
   - {fileID: 1089058108}
   - {fileID: 1089058107}
+  SelectionHighlight: {fileID: 1104429930}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -10125,6 +9911,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -10134,6 +9921,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1089058112
 Transform:
   m_ObjectHideFlags: 0
@@ -10236,7 +10031,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1109459799}
   - component: {fileID: 1109459798}
-  - component: {fileID: 1109459797}
   - component: {fileID: 1109459796}
   - component: {fileID: 1109459795}
   - component: {fileID: 1109459794}
@@ -10301,18 +10095,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1109459797
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109459793}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1109459798
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10325,17 +10107,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1981575199}
   SelectionTriggers:
   - {fileID: 1109459795}
   - {fileID: 1109459794}
+  SelectionHighlight: {fileID: 1981575199}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -10347,6 +10125,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -10356,6 +10135,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1109459799
 Transform:
   m_ObjectHideFlags: 0
@@ -10485,7 +10272,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1140131205}
   - component: {fileID: 1140131204}
-  - component: {fileID: 1140131203}
   - component: {fileID: 1140131202}
   - component: {fileID: 1140131201}
   - component: {fileID: 1140131200}
@@ -10550,18 +10336,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1140131203
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1140131199}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1140131204
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10574,17 +10348,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 542753144}
   SelectionTriggers:
   - {fileID: 1140131201}
   - {fileID: 1140131200}
+  SelectionHighlight: {fileID: 542753144}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -10596,6 +10366,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -10605,6 +10376,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1140131205
 Transform:
   m_ObjectHideFlags: 0
@@ -10892,7 +10671,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1168448945}
   - component: {fileID: 1168448944}
-  - component: {fileID: 1168448943}
   - component: {fileID: 1168448942}
   - component: {fileID: 1168448941}
   m_Layer: 8
@@ -10944,18 +10722,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &1168448943
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1168448940}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1168448944
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10968,17 +10734,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 2127027276}
   SelectionTriggers:
   - {fileID: 1168448942}
   - {fileID: 1168448941}
+  SelectionHighlight: {fileID: 2127027276}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -10990,6 +10752,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -10999,6 +10762,14 @@ MonoBehaviour:
   AttackRadius: 0
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 1
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1168448945
 Transform:
   m_ObjectHideFlags: 0
@@ -11418,6 +11189,37 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 200, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &1195440475
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1195440476}
+  m_Layer: 0
+  m_Name: MediumSpatialHashCenter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1195440476
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1195440475}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 886160920}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1222642435
 GameObject:
   m_ObjectHideFlags: 0
@@ -11729,7 +11531,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1255449931}
   - component: {fileID: 1255449930}
-  - component: {fileID: 1255449929}
   - component: {fileID: 1255449928}
   - component: {fileID: 1255449927}
   - component: {fileID: 1255449926}
@@ -11794,18 +11595,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1255449929
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1255449925}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1255449930
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11818,17 +11607,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1194376281}
   SelectionTriggers:
   - {fileID: 1255449927}
   - {fileID: 1255449926}
+  SelectionHighlight: {fileID: 1194376281}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -11840,6 +11625,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -11849,6 +11635,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1255449931
 Transform:
   m_ObjectHideFlags: 0
@@ -12265,7 +12059,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1302440672}
   - component: {fileID: 1302440671}
-  - component: {fileID: 1302440670}
   - component: {fileID: 1302440669}
   - component: {fileID: 1302440668}
   - component: {fileID: 1302440667}
@@ -12330,18 +12123,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1302440670
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1302440666}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1302440671
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12354,17 +12135,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 597549079}
   SelectionTriggers:
   - {fileID: 1302440668}
   - {fileID: 1302440667}
+  SelectionHighlight: {fileID: 597549079}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -12376,6 +12153,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -12385,6 +12163,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1302440672
 Transform:
   m_ObjectHideFlags: 0
@@ -13577,7 +13363,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1476615004}
   - component: {fileID: 1476615003}
-  - component: {fileID: 1476615002}
   - component: {fileID: 1476615001}
   - component: {fileID: 1476615000}
   m_Layer: 8
@@ -13629,18 +13414,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &1476615002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1476614999}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1476615003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13653,17 +13426,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 2093452788}
   SelectionTriggers:
   - {fileID: 1476615001}
   - {fileID: 1476615000}
+  SelectionHighlight: {fileID: 2093452788}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -13675,6 +13444,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -13684,6 +13454,14 @@ MonoBehaviour:
   AttackRadius: 0
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 1
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1476615004
 Transform:
   m_ObjectHideFlags: 0
@@ -13711,7 +13489,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1479846070}
   - component: {fileID: 1479846069}
-  - component: {fileID: 1479846068}
   - component: {fileID: 1479846067}
   - component: {fileID: 1479846066}
   - component: {fileID: 1479846065}
@@ -13776,18 +13553,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1479846068
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1479846064}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1479846069
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13800,17 +13565,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1404805691}
   SelectionTriggers:
   - {fileID: 1479846066}
   - {fileID: 1479846065}
+  SelectionHighlight: {fileID: 1404805691}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -13822,6 +13583,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -13831,6 +13593,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1479846070
 Transform:
   m_ObjectHideFlags: 0
@@ -13858,7 +13628,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1487468156}
   - component: {fileID: 1487468155}
-  - component: {fileID: 1487468154}
   - component: {fileID: 1487468153}
   - component: {fileID: 1487468152}
   - component: {fileID: 1487468151}
@@ -13923,18 +13692,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1487468154
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1487468150}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1487468155
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13947,17 +13704,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 883122663}
   SelectionTriggers:
   - {fileID: 1487468152}
   - {fileID: 1487468151}
+  SelectionHighlight: {fileID: 883122663}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -13969,6 +13722,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -13978,6 +13732,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1487468156
 Transform:
   m_ObjectHideFlags: 0
@@ -14088,7 +13850,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1530721474}
   - component: {fileID: 1530721473}
-  - component: {fileID: 1530721472}
   - component: {fileID: 1530721471}
   - component: {fileID: 1530721470}
   m_Layer: 8
@@ -14140,18 +13901,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &1530721472
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1530721469}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1530721473
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14164,17 +13913,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1810072463}
   SelectionTriggers:
   - {fileID: 1530721471}
   - {fileID: 1530721470}
+  SelectionHighlight: {fileID: 1810072463}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -14186,6 +13931,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -14195,6 +13941,14 @@ MonoBehaviour:
   AttackRadius: 0
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 1
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1530721474
 Transform:
   m_ObjectHideFlags: 0
@@ -15809,7 +15563,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1680940196}
   - component: {fileID: 1680940195}
-  - component: {fileID: 1680940194}
   - component: {fileID: 1680940193}
   - component: {fileID: 1680940192}
   - component: {fileID: 1680940191}
@@ -15874,18 +15627,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1680940194
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1680940190}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1680940195
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15898,17 +15639,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1754644847}
   SelectionTriggers:
   - {fileID: 1680940192}
   - {fileID: 1680940191}
+  SelectionHighlight: {fileID: 1754644847}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -15920,6 +15657,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -15929,6 +15667,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1680940196
 Transform:
   m_ObjectHideFlags: 0
@@ -16058,7 +15804,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1719299668}
   - component: {fileID: 1719299667}
-  - component: {fileID: 1719299666}
   - component: {fileID: 1719299665}
   - component: {fileID: 1719299664}
   - component: {fileID: 1719299663}
@@ -16123,18 +15868,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1719299666
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1719299662}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1719299667
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16147,17 +15880,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 69604347}
   SelectionTriggers:
   - {fileID: 1719299664}
   - {fileID: 1719299663}
+  SelectionHighlight: {fileID: 69604347}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -16169,6 +15898,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -16178,6 +15908,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1719299668
 Transform:
   m_ObjectHideFlags: 0
@@ -16808,7 +16546,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1779557014}
   - component: {fileID: 1779557013}
-  - component: {fileID: 1779557012}
   - component: {fileID: 1779557011}
   - component: {fileID: 1779557010}
   - component: {fileID: 1779557009}
@@ -16873,18 +16610,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1779557012
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1779557008}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1779557013
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16897,17 +16622,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 753146270}
   SelectionTriggers:
   - {fileID: 1779557010}
   - {fileID: 1779557009}
+  SelectionHighlight: {fileID: 753146270}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -16919,6 +16640,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -16928,6 +16650,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1779557014
 Transform:
   m_ObjectHideFlags: 0
@@ -17196,7 +16926,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1820231146}
   - component: {fileID: 1820231145}
-  - component: {fileID: 1820231144}
   - component: {fileID: 1820231143}
   - component: {fileID: 1820231142}
   - component: {fileID: 1820231141}
@@ -17261,18 +16990,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1820231144
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1820231140}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1820231145
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17285,17 +17002,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1560799029}
   SelectionTriggers:
   - {fileID: 1820231142}
   - {fileID: 1820231141}
+  SelectionHighlight: {fileID: 1560799029}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -17307,6 +17020,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -17316,6 +17030,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1820231146
 Transform:
   m_ObjectHideFlags: 0
@@ -17343,7 +17065,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1824188834}
   - component: {fileID: 1824188833}
-  - component: {fileID: 1824188832}
   - component: {fileID: 1824188831}
   - component: {fileID: 1824188830}
   m_Layer: 8
@@ -17395,18 +17116,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &1824188832
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1824188829}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1824188833
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17419,17 +17128,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 427107142}
   SelectionTriggers:
   - {fileID: 1824188831}
   - {fileID: 1824188830}
+  SelectionHighlight: {fileID: 427107142}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -17441,6 +17146,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -17450,6 +17156,14 @@ MonoBehaviour:
   AttackRadius: 0
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 1
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1824188834
 Transform:
   m_ObjectHideFlags: 0
@@ -17477,7 +17191,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1845547701}
   - component: {fileID: 1845547700}
-  - component: {fileID: 1845547699}
   - component: {fileID: 1845547698}
   - component: {fileID: 1845547697}
   - component: {fileID: 1845547696}
@@ -17542,18 +17255,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1845547699
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1845547695}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1845547700
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17566,17 +17267,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 104756992}
   SelectionTriggers:
   - {fileID: 1845547697}
   - {fileID: 1845547696}
+  SelectionHighlight: {fileID: 104756992}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -17588,6 +17285,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -17597,6 +17295,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1845547701
 Transform:
   m_ObjectHideFlags: 0
@@ -17884,7 +17590,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1873762213}
   - component: {fileID: 1873762212}
-  - component: {fileID: 1873762211}
   - component: {fileID: 1873762210}
   - component: {fileID: 1873762209}
   - component: {fileID: 1873762208}
@@ -17949,18 +17654,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1873762211
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1873762207}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1873762212
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17973,17 +17666,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 704085436}
   SelectionTriggers:
   - {fileID: 1873762209}
   - {fileID: 1873762208}
+  SelectionHighlight: {fileID: 704085436}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -17995,6 +17684,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -18004,6 +17694,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1873762213
 Transform:
   m_ObjectHideFlags: 0
@@ -18136,7 +17834,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1896064015}
   - component: {fileID: 1896064014}
-  - component: {fileID: 1896064013}
   - component: {fileID: 1896064012}
   - component: {fileID: 1896064011}
   m_Layer: 8
@@ -18188,18 +17885,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!114 &1896064013
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1896064010}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1896064014
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18212,17 +17897,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1175215502}
   SelectionTriggers:
   - {fileID: 1896064012}
   - {fileID: 1896064011}
+  SelectionHighlight: {fileID: 1175215502}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -18234,6 +17915,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -18243,6 +17925,14 @@ MonoBehaviour:
   AttackRadius: 0
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 1
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1896064015
 Transform:
   m_ObjectHideFlags: 0
@@ -18345,7 +18035,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1951399554}
   - component: {fileID: 1951399553}
-  - component: {fileID: 1951399552}
   - component: {fileID: 1951399551}
   - component: {fileID: 1951399550}
   - component: {fileID: 1951399549}
@@ -18410,18 +18099,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1951399552
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1951399548}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1951399553
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18434,17 +18111,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1869220282}
   SelectionTriggers:
   - {fileID: 1951399550}
   - {fileID: 1951399549}
+  SelectionHighlight: {fileID: 1869220282}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -18456,6 +18129,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -18465,6 +18139,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &1951399554
 Transform:
   m_ObjectHideFlags: 0
@@ -19151,7 +18833,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2116970413}
   - component: {fileID: 2116970412}
-  - component: {fileID: 2116970411}
   - component: {fileID: 2116970410}
   - component: {fileID: 2116970409}
   - component: {fileID: 2116970408}
@@ -19216,18 +18897,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &2116970411
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2116970407}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2423c9a4a35862458a2995e73049b5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &2116970412
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19240,17 +18909,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b1b83ec1573df4484a8fbeaebbec9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SelectionHighlight: {fileID: 1541826049}
   SelectionTriggers:
   - {fileID: 2116970409}
   - {fileID: 2116970408}
+  SelectionHighlight: {fileID: 1541826049}
   Radius: 0.5
-  Arrive:
-    SlowThreshold: 0.2
-    StopRadius: 0.1
   Kinematic:
     SpeedCap: 3.5
-    AccelerationCap: 5000
     PreferredVelocity: {x: 0, y: 0, z: 0}
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
@@ -19262,6 +18927,7 @@ MonoBehaviour:
     Resolved: 1
     HoldingPosition: 0
     ReturnRadius: 3.5
+    LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: -Infinity
     DBG: 0
     TimeHorizon: 2
@@ -19271,6 +18937,14 @@ MonoBehaviour:
   AttackRadius: 0.1
   Attacking: 0
   InAlertRange: 0
+  Config:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Mass: 0
+    MaxAcceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
 --- !u!4 &2116970413
 Transform:
   m_ObjectHideFlags: 0
