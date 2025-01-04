@@ -17,7 +17,6 @@ public class UnitController : MonoBehaviour, IComponent
     public float Radius;
 
     public Kinematic Kinematic;
-    public BasicMovement BasicMovement;
     public Owner Owner;
 
     public GameObject Target;
@@ -27,6 +26,9 @@ public class UnitController : MonoBehaviour, IComponent
     public bool InAlertRange;
 
     public Config Config;
+    public MovementComponent DBG_Movement;
+
+    public bool DBG_Orientation;
 }
 
 [System.Serializable]
@@ -42,6 +44,8 @@ public struct Config
     public float MaxAcceleration;
     public float ReturnRadius;
     public float TimeHorizon;
+
+    public float LowVelocityDuration;
 }
 
 [System.Serializable]
@@ -57,20 +61,26 @@ public struct MovementComponent
     public float ReturnRadius;
     public float TimeHorizon;
 
-    // State
+    // State + Movement heuristics
     public bool Resolved;
     public bool HoldingPosition;
     public float LastPushedByFriendlyNeighborTime;
     public float LastMoveTime; // Last TimeStep where velocity sqrDist was greater than zero
     public int SidePreference; // Side preference key: -1 -> left / 0 -> none / 1 -> right
 
+    public float LowVelocityDuration;
+    public float LowVelocityElapsed;
+
     // Physics
     public float Mass;
     public float3 Velocity;
+    public float3 MoveStartPosition;
     public float3 Position;
     public float3 OldPosition;
     public float3 TargetPosition;
     public float Orientation;
+
+    public int CurrentGroup;
 
     public MovementComponent(UnitController unitController)
     {
@@ -87,13 +97,18 @@ public struct MovementComponent
         LastPushedByFriendlyNeighborTime = -math.INFINITY;
         LastMoveTime = -math.INFINITY;
         SidePreference = 0;
+        LowVelocityDuration = unitController.Config.LowVelocityDuration;
+        LowVelocityElapsed = 0;
 
         Mass = unitController.Config.Mass;
         Velocity = float3.zero;
+        MoveStartPosition = unitController.transform.position;
         Position = unitController.transform.position;
         OldPosition = unitController.transform.position;
         TargetPosition = unitController.transform.position;
         Orientation = 0;
+
+        CurrentGroup = -1;
     }
 }
 

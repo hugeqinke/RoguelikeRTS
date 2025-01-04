@@ -4,8 +4,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine.Jobs;
-using UnityEngine.UIElements;
-using UnityEngine.Profiling;
+using Unity.Burst;
 
 public class Simulator : MonoBehaviour
 {
@@ -22,9 +21,9 @@ public class Simulator : MonoBehaviour
 
     public float AlertRadius;
 
+
     // Misc
-    public HashSet<MoveGroup> MoveGroups;
-    public Dictionary<GameObject, MoveGroup> MoveGroupMap;
+    public MoveGroupPool MoveGroupPool;
 
     // Monobehavior adapters
     public Dictionary<GameObject, int> PlayerIndexMap;
@@ -43,6 +42,10 @@ public class Simulator : MonoBehaviour
 
     public int Substeps;
 
+    public bool DBGTarget;
+    public bool DBGResolvedState;
+    public bool DBGForward;
+
     private void Awake()
     {
         Instance = this;
@@ -55,8 +58,7 @@ public class Simulator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        MoveGroups = new HashSet<MoveGroup>();
-        MoveGroupMap = new Dictionary<GameObject, MoveGroup>();
+        MoveGroupPool = new MoveGroupPool();
 
         _mediumSpatialHashMeta = new SpatialHashMeta
         {
@@ -100,30 +102,6 @@ public class Simulator : MonoBehaviour
         }
     }
 
-    public void UpdateMoveGroup(HashSet<GameObject> units)
-    {
-        var moveGroup = new MoveGroup();
-        foreach (var unit in units)
-        {
-            if (MoveGroupMap.ContainsKey(unit))
-            {
-                var oldMoveGroup = MoveGroupMap[unit];
-                if (oldMoveGroup.Units.Contains(unit))
-                {
-                    oldMoveGroup.Units.Remove(unit);
-                }
-
-                MoveGroupMap.Remove(unit);
-            }
-
-            // Add to new MoveGroup
-            moveGroup.Units.Add(unit);
-            MoveGroupMap.Add(unit, moveGroup);
-        }
-
-        MoveGroups.Add(moveGroup);
-    }
-
     public void SetMovementValues(Dictionary<GameObject, Vector3> positions)
     {
         foreach (var kvp in positions)
@@ -132,6 +110,8 @@ public class Simulator : MonoBehaviour
             var idx = IndexMap[unit];
             var movementComponent = MovementComponents[idx];
             movementComponent.TargetPosition = positions[unit];
+            movementComponent.MoveStartPosition = movementComponent.Position;
+            movementComponent.Resolved = false;
 
             var dir = positions[unit] - unit.transform.position;
             if (dir.sqrMagnitude > Mathf.Epsilon)
@@ -164,46 +144,8 @@ public class Simulator : MonoBehaviour
 
     private void LateUpdate()
     {
-        var resolvedGroups = new List<MoveGroup>();
-        foreach (var moveGroup in MoveGroups)
-        {
-            if (moveGroup.Resolved(this))
-            {
-                resolvedGroups.Add(moveGroup);
-            }
-        }
-
-        foreach (var group in resolvedGroups)
-        {
-            MoveGroups.Remove(group);
-            foreach (var unit in group.Units)
-            {
-                MoveGroupMap.Remove(unit);
-            }
-        }
+        MoveGroupPool.Prune(this);
     }
-
-    // private NativeMultiHashMap<int, int> CreateSpatialHash(SpatialHashConfig config)
-    // {
-    //     var origin = config.Origin;
-    //     var spatialhash = new NativeMultiHashMap<int, int>(Units.Count, Allocator.TempJob);
-
-    //     for (int i = 0; i < Units.Count; i++)
-    //     {
-    //         var unit = Units[i];
-    //         var idx = IndexMap[unit];
-    //         Vector3 position = MovementComponents[idx].Position;
-
-    //         var rel = position - origin;
-    //         var row = Mathf.FloorToInt(rel.z / config.Size);
-    //         var column = Mathf.FloorToInt(rel.x / config.Size);
-
-    //         var hash = row * config.Columns + column;
-    //         spatialhash.Add(hash, i);
-    //     }
-
-    //     return spatialhash;
-    // }
 
     private int ComputeSpatialHash(SpatialHashMeta meta, Cell cell)
     {
@@ -225,210 +167,121 @@ public class Simulator : MonoBehaviour
         };
     }
 
-    private Dictionary<int, List<int>> CreateSpatialHash(SpatialHashMeta meta)
+    private NativeMultiHashMap<int, int> CreateSpatialHash(SpatialHashMeta meta)
     {
-        var spatialhash = new Dictionary<int, List<int>>();
+        var spatialhash = new NativeMultiHashMap<int, int>(Units.Count * 8, Allocator.TempJob);
 
         for (int i = 0; i < Units.Count; i++)
         {
             var unit = Units[i];
             var hash = ComputeSpatialHash(meta, ComputeRowColumns(meta, i));
-
-            if (!spatialhash.ContainsKey(hash))
-            {
-                spatialhash.Add(hash, new List<int>());
-            }
-
-            spatialhash[hash].Add(i);
+            spatialhash.Add(hash, i);
         }
 
         return spatialhash;
     }
 
+    private void Update()
+    {
+        for (int i = 0; i < Units.Count; i++)
+        {
+            var unitController = UnitControllers[Units[i]];
+            unitController.DBG_Movement = MovementComponents[i];
+        }
+    }
+
     private void FixedUpdate()
     {
-        var allocSize = Units.Count;
-
         // Create spatial hash
+        // Profiler.BeginSample("Create spatial hash");
         var mediumSpatialHash = CreateSpatialHash(_mediumSpatialHashMeta);
+        // Profiler.EndSample();
 
-        var sdt = Time.fixedDeltaTime / Substeps;
-
-        Profiler.BeginSample("Physics");
-        for (int substep = 0; substep < Substeps; substep++)
+        var allocSize = Units.Count;
+        var movementComponents = new NativeArray<MovementComponent>(allocSize, Allocator.TempJob);
+        for (int i = 0; i < MovementComponents.Count; i++)
         {
-            Profiler.BeginSample("Integrate Velocity");
-            for (int i = 0; i < Units.Count; i++)
-            {
-                var unit = MovementComponents[i];
-
-                var dir = math.normalizesafe(unit.TargetPosition - unit.Position);
-                unit.Velocity += dir * unit.Acceleration * sdt;
-                unit.Velocity = Vector3.ClampMagnitude(unit.Velocity, unit.MaxSpeed);
-                unit.OldPosition = unit.Position;
-                unit.Position += unit.Velocity * sdt;
-
-                MovementComponents[i] = unit;
-            }
-            Profiler.EndSample();
-
-            Profiler.BeginSample("Fix position");
-            for (int i = 0; i < Units.Count; i++)
-            {
-                var unit = Units[i];
-                Profiler.BeginSample("Broad Phase");
-                var neighborIndices = BroadPhase(_mediumSpatialHashMeta, mediumSpatialHash, i);
-                Profiler.EndSample();
-
-                Profiler.BeginSample("Neighbor indices");
-                for (var j = 0; j < neighborIndices.Count; j++)
-                {
-                    var bodyi = MovementComponents[i];
-
-                    var neighborIdx = neighborIndices[j];
-                    var bodyj = MovementComponents[neighborIdx];
-
-                    var dir = bodyj.Position - bodyi.Position;
-                    var separation = math.length(dir);
-
-                    var collideRadius = bodyi.Radius + bodyj.Radius;
-
-                    if (separation < collideRadius)
-                    {
-                        var totalMass = bodyi.Mass + bodyj.Mass;
-
-                        var slop = collideRadius - separation;
-
-                        var x1 = -bodyj.Mass / totalMass * slop * math.normalizesafe(dir);
-                        var x2 = bodyi.Mass / totalMass * slop * math.normalizesafe(dir);
-
-                        bodyi.Position += x1;
-                        bodyj.Position += x2;
-
-                        MovementComponents[i] = bodyi;
-                        MovementComponents[neighborIdx] = bodyj;
-                    }
-                }
-                Profiler.EndSample();
-            }
-            Profiler.EndSample();
-
-            Profiler.BeginSample("Fix End position");
-            // end position constraint
-            for (int i = 0; i < Units.Count; i++)
-            {
-                var unit = MovementComponents[i];
-                var relDir = unit.TargetPosition - unit.Position;
-                var moveDir = unit.Position - unit.OldPosition;
-
-                var relDirLenSq = math.lengthsq(relDir);
-                var moveDirSq = math.lengthsq(moveDir);
-
-                var cross = Vector3.Cross(relDir, moveDir);
-                var crossDirSq = cross.sqrMagnitude;
-
-                if (relDirLenSq < moveDirSq && crossDirSq < 0.001f)
-                {
-                    unit.Position = unit.TargetPosition;
-                    MovementComponents[i] = unit;
-                }
-            }
-            Profiler.EndSample();
-
-            Profiler.BeginSample("Fix velocity");
-            // fix velocity 
-            for (int i = 0; i < Units.Count; i++)
-            {
-                var unit = MovementComponents[i];
-
-                var dir = unit.TargetPosition - unit.Position;
-                var dirLenSqr = math.lengthsq(dir);
-
-                if (dirLenSqr < 0.001f)
-                {
-                    unit.Velocity = Vector3.zero;
-                }
-                else
-                {
-                    unit.Velocity = (unit.Position - unit.OldPosition) / sdt;
-                }
-
-                MovementComponents[i] = unit;
-            }
-            Profiler.EndSample();
+            movementComponents[i] = MovementComponents[i];
         }
-        Profiler.EndSample();
+
+        var physicsJob = new PhysicsJob()
+        {
+            SpatialHashMap = mediumSpatialHash,
+            SpatialHashMeta = _mediumSpatialHashMeta,
+            Substeps = 4,
+            Units = movementComponents,
+            DeltaTime = Time.fixedDeltaTime
+        };
+
+        var physicsJobHandle = physicsJob.Schedule();
+        physicsJobHandle.Complete();
 
         for (int i = 0; i < Units.Count; i++)
         {
             var unit = Units[i];
-            var movement = MovementComponents[i];
+            var movement = movementComponents[i];
 
             unit.transform.position = movement.Position;
-        }
-    }
 
-    public List<int> BroadPhase(SpatialHashMeta meta, Dictionary<int, List<int>> spatialHash, int unitIdx)
-    {
-        var cell = ComputeRowColumns(_mediumSpatialHashMeta, unitIdx);
-
-        Profiler.BeginSample("Cells and neighbors");
-        var cells = new List<Cell>()
-        {
-            cell,
-            new Cell(cell.Row + 1, cell.Column),
-            new Cell(cell.Row + 1, cell.Column + 1),
-            new Cell(cell.Row, cell.Column + 1),
-            new Cell(cell.Row - 1, cell.Column + 1),
-            new Cell(cell.Row - 1, cell.Column),
-            new Cell(cell.Row - 1, cell.Column - 1),
-            new Cell(cell.Row, cell.Column - 1),
-            new Cell(cell.Row + 1, cell.Column - 1)
-        };
-
-        var hashes = new List<int>();
-        foreach (var neighborCell in cells)
-        {
-            if (neighborCell.Row >= 0
-                    && neighborCell.Row < meta.Rows
-                    && neighborCell.Column >= 0
-                    && neighborCell.Column < meta.Columns)
+            var vLenSq = math.lengthsq(movement.Velocity);
+            if (vLenSq > Mathf.Epsilon)
             {
-                hashes.Add(ComputeSpatialHash(meta, neighborCell));
-            }
-        }
-        Profiler.EndSample();
-
-        Profiler.BeginSample("Populate neighbors");
-        var neighbors = new List<int>();
-        foreach (var hash in hashes)
-        {
-            if (!spatialHash.ContainsKey(hash))
-            {
-                continue;
+                movement.Orientation = Vector3.SignedAngle(Vector3.forward, movement.Velocity, Vector3.up);
             }
 
-            var indices = spatialHash[hash];
-            foreach (var index in indices)
-            {
-                if (index != unitIdx)
-                {
-                    neighbors.Add(index);
-                }
-            }
+            MovementComponents[i] = movement;
         }
-        Profiler.EndSample();
 
-        return neighbors;
+        mediumSpatialHash.Dispose();
+        movementComponents.Dispose();
     }
 
     private void OnDrawGizmos()
     {
+        if (DBGTarget)
+        {
+            for (int i = 0; i < MovementComponents.Count; i++)
+            {
+                var movementComponent = MovementComponents[i];
+                Gizmos.DrawWireSphere(movementComponent.TargetPosition, 0.5f);
+            }
+        }
+
+        if (DBGResolvedState)
+        {
+            for (int i = 0; i < MovementComponents.Count; i++)
+            {
+                var movementComponent = MovementComponents[i];
+                if (movementComponent.Resolved)
+                {
+                    Gizmos.color = Color.grey;
+                }
+                else
+                {
+                    Gizmos.color = Color.green;
+                }
+
+                Gizmos.DrawWireSphere(movementComponent.Position + new float3(0, 2, 0), 0.5f);
+            }
+        }
+
+        if (DBGForward)
+        {
+            Gizmos.color = Color.green;
+            for (int i = 0; i < MovementComponents.Count; i++)
+            {
+                var movementComponent = MovementComponents[i];
+                var forward = Quaternion.Euler(0, movementComponent.Orientation, 0) * Vector3.forward;
+                Gizmos.DrawRay(movementComponent.Position, forward * 0.5f);
+            }
+        }
+
         if (DBGMediumHash)
         {
             var origin = MediumSpatialHashConfig.Origin;
             var size = new Vector3(MediumSpatialHashConfig.Size, 0, MediumSpatialHashConfig.Size);
 
+            Gizmos.color = Color.white;
             for (int row = 0; row < MediumSpatialHashConfig.Rows; row++)
             {
                 for (int col = 0; col < MediumSpatialHashConfig.Columns; col++)
@@ -1179,21 +1032,21 @@ public class Simulator : MonoBehaviour
     //     unit.transform.position = unitComponent.Kinematic.Position;
     // }
 
-    private bool InPushRadius(GameObject unit, GameObject neighbor)
-    {
-        var neighborUnitComponent = neighbor.GetComponent<UnitController>();
-        var unitComponent = unit.GetComponent<UnitController>();
+    // private bool InPushRadius(GameObject unit, GameObject neighbor)
+    // {
+    //     var neighborUnitComponent = neighbor.GetComponent<UnitController>();
+    //     var unitComponent = unit.GetComponent<UnitController>();
 
-        var relativeDir = unit.transform.position - neighbor.transform.position;
-        var dist = relativeDir.magnitude;
-        dist -= unitComponent.Radius;
-        dist -= neighborUnitComponent.Radius;
-        // Add a small offset to prevent "stuttering" due to the impulse force
-        // (from resolving collisions) kicking neighbors out of the push influence region
-        dist -= 0.025f;
+    //     var relativeDir = unit.transform.position - neighbor.transform.position;
+    //     var dist = relativeDir.magnitude;
+    //     dist -= unitComponent.Radius;
+    //     dist -= neighborUnitComponent.Radius;
+    //     // Add a small offset to prevent "stuttering" due to the impulse force
+    //     // (from resolving collisions) kicking neighbors out of the push influence region
+    //     dist -= 0.025f;
 
-        return dist < Mathf.Epsilon && Vector3.Dot(relativeDir, neighborUnitComponent.Kinematic.Velocity) > 0;
-    }
+    //     return dist < Mathf.Epsilon && Vector3.Dot(relativeDir, neighborUnitComponent.Kinematic.Velocity) > 0;
+    // }
 
     // private void ResolveCollision(GameObject unit, GameObject neighbor)
     // {
@@ -1370,24 +1223,24 @@ public class Simulator : MonoBehaviour
     //     unitComponent.Kinematic.Velocity = Vector3.zero;
     // }
 
-    private bool NearTarget(GameObject unit)
-    {
-        var unitComponent = unit.GetComponent<UnitController>();
-        var position = unitComponent.Kinematic.Position;
-        var targetPosition = unitComponent.BasicMovement.TargetPosition;
+    // private bool NearTarget(GameObject unit)
+    // {
+    //     var unitComponent = unit.GetComponent<UnitController>();
+    //     var position = unitComponent.Kinematic.Position;
+    //     var targetPosition = unitComponent.BasicMovement.TargetPosition;
 
-        var stopRadius = unitComponent.Radius * 1.5f;
-        return (position - targetPosition).sqrMagnitude <= stopRadius * stopRadius;
-    }
+    //     var stopRadius = unitComponent.Radius * 1.5f;
+    //     return (position - targetPosition).sqrMagnitude <= stopRadius * stopRadius;
+    // }
 
-    private bool ArrivedAtTarget(GameObject unit)
-    {
-        var unitComponent = unit.GetComponent<UnitController>();
-        var position = unitComponent.Kinematic.Position;
-        var targetPosition = unitComponent.BasicMovement.TargetPosition;
+    // private bool ArrivedAtTarget(GameObject unit)
+    // {
+    //     var unitComponent = unit.GetComponent<UnitController>();
+    //     var position = unitComponent.Kinematic.Position;
+    //     var targetPosition = unitComponent.BasicMovement.TargetPosition;
 
-        return (position - targetPosition).sqrMagnitude <= Mathf.Epsilon;
-    }
+    //     return (position - targetPosition).sqrMagnitude <= Mathf.Epsilon;
+    // }
 
     private bool IsColliding(GameObject unit, GameObject neighbor)
     {
@@ -1627,5 +1480,107 @@ public struct Cell
     {
         Row = row;
         Column = column;
+    }
+}
+
+public class MoveGroupPool
+{
+    public Dictionary<int, HashSet<int>> MoveGroups;
+    public Stack<int> FreePool;
+    public int MaxMoveGroup = 100;
+
+    public MoveGroupPool()
+    {
+        MoveGroups = new Dictionary<int, HashSet<int>>();
+        FreePool = new Stack<int>();
+        for (int i = MaxMoveGroup - 1; i >= 0; i--)
+        {
+            FreePool.Push(i);
+        }
+    }
+
+    public void Assign(Simulator simulator, IEnumerable<GameObject> units)
+    {
+        if (FreePool.Count == 0)
+        {
+            for (int i = MaxMoveGroup + 19; i >= MaxMoveGroup; i--)
+            {
+                FreePool.Push(i);
+            }
+
+            MaxMoveGroup += 20;
+        }
+
+        var freeId = FreePool.Pop();
+
+        var moveGroupUnits = new HashSet<int>();
+        foreach (var unit in units)
+        {
+            var idx = simulator.IndexMap[unit];
+
+            var movement = simulator.MovementComponents[idx];
+
+            if (movement.CurrentGroup != -1)
+            {
+                if (MoveGroups.ContainsKey(movement.CurrentGroup))
+                {
+                    MoveGroups[movement.CurrentGroup].Remove(idx);
+                }
+            }
+
+            movement.CurrentGroup = freeId;
+            simulator.MovementComponents[idx] = movement;
+
+            moveGroupUnits.Add(idx);
+        }
+
+        MoveGroups.Add(freeId, moveGroupUnits);
+    }
+
+    public void Prune(Simulator simulator)
+    {
+        var newMoveGroup = new Dictionary<int, HashSet<int>>();
+        var removeIds = new List<int>();
+        foreach (var groupKVP in MoveGroups)
+        {
+            var keep = false;
+            foreach (var idx in groupKVP.Value)
+            {
+                if (!simulator.MovementComponents[idx].Resolved)
+                {
+                    keep = true;
+                    break;
+                }
+            }
+
+            if (keep)
+            {
+                newMoveGroup.Add(groupKVP.Key, groupKVP.Value);
+            }
+            else
+            {
+                removeIds.Add(groupKVP.Key);
+            }
+        }
+
+        foreach (var removeId in removeIds)
+        {
+            Free(simulator, removeId);
+        }
+
+        MoveGroups = newMoveGroup;
+    }
+
+    public void Free(Simulator simulator, int groupId)
+    {
+        foreach (var idx in MoveGroups[groupId])
+        {
+            var movement = simulator.MovementComponents[idx];
+            movement.CurrentGroup = -1;
+            simulator.MovementComponents[idx] = movement;
+        }
+
+        FreePool.Push(groupId);
+        MoveGroups.Remove(groupId);
     }
 }

@@ -14203,7 +14203,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -8.2
+      value: -8.22
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.y
@@ -14211,7 +14211,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -3.0499997
+      value: -3.05
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalRotation.w
@@ -18191,13 +18191,16 @@ MonoBehaviour:
   Units: []
   Transforms: []
   MovementComponents: []
-  DBGMediumHash: 1
+  DBGMediumHash: 0
   MediumSpatialHashConfig:
     Rows: 50
     Columns: 50
     Size: 1
     Center: {fileID: 1377604679}
-  Substeps: 3
+  Substeps: 5
+  DBGTarget: 0
+  DBGResolvedState: 1
+  DBGForward: 0
 --- !u!1001 &886552744
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -28976,10 +28979,6 @@ PrefabInstance:
     - target: {fileID: 3324420920386474821, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_IsActive
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.MaxSpeed
-      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 7968024303189016854, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_Name

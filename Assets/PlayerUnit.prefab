@@ -404,18 +404,6 @@ MonoBehaviour:
     Velocity: {x: 0, y: 0, z: 0}
     Position: {x: 0, y: 0, z: 0}
     Orientation: 0
-  BasicMovement:
-    TargetPosition: {x: 0, y: 0, z: 0}
-    TargetOrientation: 0
-    RelativeDeltaStart: {x: 0, y: 0, z: 0}
-    Resolved: 1
-    HoldingPosition: 0
-    ReturnRadius: 3.5
-    LastPushedByFriendlyNeighborTime: 0
-    LastMoveTime: -Infinity
-    DBG: 0
-    TimeHorizon: 0.25
-    SidePreference: 0
   Owner: 0
   Target: {fileID: 0}
   AttackRadius: 0.1
@@ -424,16 +412,50 @@ MonoBehaviour:
   Config:
     Owner: 0
     Radius: 0.5
-    Force: 100
-    MaxSpeed: 3.5
+    MaxSpeed: 3
     Mass: 1
-    Friction: 5
     MaxAcceleration: 1000
-    MaxDeceleration: 1000
     ReturnRadius: 3.5
     TimeHorizon: 0.25
-    SlowRadius: 0.1
-    StopRadius: 0.001
+    LowVelocityDuration: 0.5
+  DBG_Movement:
+    Owner: 0
+    Radius: 0
+    MaxSpeed: 0
+    Acceleration: 0
+    ReturnRadius: 0
+    TimeHorizon: 0
+    Resolved: 0
+    HoldingPosition: 0
+    LastPushedByFriendlyNeighborTime: 0
+    LastMoveTime: 0
+    SidePreference: 0
+    LowVelocityDuration: 0
+    LowVelocityElapsed: 0
+    Mass: 0
+    Velocity:
+      x: 0
+      y: 0
+      z: 0
+    MoveStartPosition:
+      x: 0
+      y: 0
+      z: 0
+    Position:
+      x: 0
+      y: 0
+      z: 0
+    OldPosition:
+      x: 0
+      y: 0
+      z: 0
+    TargetPosition:
+      x: 0
+      y: 0
+      z: 0
+    Orientation: 0
+    CurrentGroup: 0
+  DBG_Orientation: 0
 --- !u!114 &5492515113754354241
 MonoBehaviour:
   m_ObjectHideFlags: 0

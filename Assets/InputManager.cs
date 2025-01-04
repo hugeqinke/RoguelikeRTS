@@ -164,18 +164,18 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    private void ResetKinematics(IEnumerable<GameObject> units)
-    {
-        foreach (var unit in units)
-        {
-            var unitComponent = Simulator.UnitControllers[unit];
-            unitComponent.Kinematic.Velocity = Vector3.zero;
+    // private void ResetKinematics(IEnumerable<GameObject> units)
+    // {
+    //     foreach (var unit in units)
+    //     {
+    //         var unitComponent = Simulator.UnitControllers[unit];
+    //         unitComponent.Kinematic.Velocity = Vector3.zero;
 
-            unitComponent.BasicMovement.Resolved = false;
-            unitComponent.BasicMovement.HoldingPosition = false;
-            unitComponent.Target = null;
-        }
-    }
+    //         unitComponent.BasicMovement.Resolved = false;
+    //         unitComponent.BasicMovement.HoldingPosition = false;
+    //         unitComponent.Target = null;
+    //     }
+    // }
 
     private Dictionary<GameObject, Vector3> CalculateTargetPositions(Vector3 targetCenter)
     {
@@ -479,9 +479,8 @@ public class InputManager : MonoBehaviour
             point.y = 0;
 
             // Update target positions
-            var positions = CalculateTargetPositions(point);
-            Simulator.SetMovementValues(positions);
-            Simulator.UpdateMoveGroup(_selectedUnits);
+            Simulator.SetMovementValues(CalculateTargetPositions(point));
+            Simulator.MoveGroupPool.Assign(Simulator, _selectedUnits);
         }
     }
 
