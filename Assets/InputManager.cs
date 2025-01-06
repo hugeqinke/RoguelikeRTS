@@ -164,19 +164,6 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    // private void ResetKinematics(IEnumerable<GameObject> units)
-    // {
-    //     foreach (var unit in units)
-    //     {
-    //         var unitComponent = Simulator.UnitControllers[unit];
-    //         unitComponent.Kinematic.Velocity = Vector3.zero;
-
-    //         unitComponent.BasicMovement.Resolved = false;
-    //         unitComponent.BasicMovement.HoldingPosition = false;
-    //         unitComponent.Target = null;
-    //     }
-    // }
-
     private Dictionary<GameObject, Vector3> CalculateTargetPositions(Vector3 targetCenter)
     {
         // calculate the magic box that contains all units
@@ -615,6 +602,12 @@ public static class MathUtil
         return distanceToPlane > -radius;
     }
 
+    public static bool OnPositiveHalfPlane(MathUtil.Plane plane, float3 position, float radius)
+    {
+        var distanceToPlane = math.dot(plane.Normal, position) - plane.Distance;
+        return distanceToPlane > -radius;
+    }
+
     public static float NormalizeOrientation(float value)
     {
         return NormalizeAngle(value, 0, 360);
@@ -638,15 +631,25 @@ public static class MathUtil
         return Determinant2D(a - c, b - a);
     }
 
-    public class Plane
+    public static float Determinant2D(float3 v1, float3 v2)
     {
-        public Vector3 Normal;
+        return v1.x * v2.z - v1.z * v2.x;
+    }
+
+    public static float LeftOf(float3 a, float3 b, float3 c)
+    {
+        return Determinant2D(a - c, b - a);
+    }
+
+    public struct Plane
+    {
+        public float3 Normal;
         public float Distance; // Distance from origin
 
-        public Plane(Vector3 dir, Vector3 inPoint)
+        public Plane(float3 dir, float3 inPoint)
         {
-            Normal = dir.normalized;
-            Distance = Vector3.Dot(Normal, inPoint);
+            Normal = math.normalizesafe(dir);
+            Distance = math.dot(Normal, inPoint);
         }
     }
 

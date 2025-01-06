@@ -13,117 +13,182 @@ public struct PhysicsJob : IJob
     public NativeMultiHashMap<int, int> SpatialHashMap;
     public SpatialHashMeta SpatialHashMeta;
 
+    public float MovingNeighborRadius;
     public int Substeps;
     public float DeltaTime;
+    public float RotateAmount;
+    public float MoveRotateAmount;
+    public float MoveClearance;
 
-    public bool StopFromCollision(MovementComponent unit, MovementComponent neighbor)
+    private int ChooseNeighbor(MovementComponent unit, NativeMultiHashMap<int, int>.Enumerator neighborIndexes)
     {
-        if (neighbor.Resolved)
-        {
-            return false;
-        }
+        int nearNeighbor = -1;
+        var nearSqrDst = math.INFINITY;
+        var avoidancePriority = -1;
 
-        var sepDir = neighbor.Position - unit.Position;
-        var sepLenSq = math.lengthsq(sepDir);
-        var collideRadius = unit.Radius + neighbor.Radius;
-        if (sepLenSq < collideRadius * collideRadius)
+        foreach (var neighborIdx in neighborIndexes)
         {
-            var targetDir = neighbor.TargetPosition - unit.TargetPosition;
-            var targetLenSq = math.lengthsq(targetDir);
+            var neighbor = Units[neighborIdx];
+            var avoidanceType = GetAvoidanceType(neighbor);
 
-            if (targetLenSq <= 4 * collideRadius * collideRadius
-                    && math.dot(unit.Velocity, neighbor.Velocity) <= 0)
+            var sqrDst = math.lengthsq(neighbor.Position - unit.Position);
+            var radius = MovingNeighborRadius + unit.Radius + neighbor.Radius;
+
+            if (avoidanceType != AvoidanceType.Stationary && sqrDst > radius * radius)
             {
-                return true;
+                continue;
+            }
+
+            if (!ValidTargetPositionConstraint(unit, neighbor))
+            {
+                continue;
+            }
+
+            if (unit.Owner == neighbor.Owner && !ResolveFriendConstraints(unit, neighbor, avoidancePriority))
+            {
+                continue;
+            }
+
+            if (unit.Owner != neighbor.Owner && !ResolveEnemyConstraints(unit, neighborIdx))
+            {
+                continue;
+            }
+
+            if (sqrDst < nearSqrDst)
+            {
+                nearSqrDst = sqrDst;
+                nearNeighbor = neighborIdx;
+                avoidancePriority = (int)avoidanceType;
             }
         }
 
-        return false;
+        return nearNeighbor;
     }
 
-    public bool CheckUnitStop(int unitIdx, ref NativeMultiHashMap<int, int> neighbors)
+    private MovementComponent CalculatePreferredDirection(
+            MovementComponent unit,
+            NativeMultiHashMap<int, int>.Enumerator neighborIndexes)
     {
-        var unit = Units[unitIdx];
         var dir = unit.TargetPosition - unit.Position;
-        var dirLenSqr = math.lengthsq(dir);
+        unit.PreferredDir = math.normalizesafe(dir);
 
-        // Stop if this unit is very close to the target position
-        if (dirLenSqr < 0.001f)
-        {
-            return true;
-        }
+        var neighborIdx = ChooseNeighbor(unit, neighborIndexes);
 
-        // Stop if this unit "goes over" the target position
-        var startingDir = unit.TargetPosition - unit.MoveStartPosition;
-        if (math.dot(startingDir, dir) < 0)
+        if (neighborIdx != -1)
         {
-            return true;
-        }
+            var neighbor = Units[neighborIdx];
 
-        // Stop if the unit's been going too slow for too long
-        if (unit.LowVelocityElapsed > unit.LowVelocityDuration)
-        {
-            return true;
-        }
-
-        if (dirLenSqr < 25)
-        {
-            // Stop if unit is somewhat near the target position, and collides
-            // with another unit going the opposite direction
-            var neighborIndicies = neighbors.GetValuesForKey(unitIdx);
-            foreach (var neighborIdx in neighborIndicies)
+            var avoidanceType = GetAvoidanceType(neighbor);
+            if (avoidanceType == AvoidanceType.Moving)
             {
-                if (neighborIdx == unitIdx)
+                if (neighbor.SidePreference != 0 && unit.SidePreference != neighbor.SidePreference)
                 {
-                    continue;
+                    // This is to make sure two moving units eventually resolve their incoming collisoin.  If two units have
+                    // opposite signs for their side preferences, then they'll run into each other forever
+                    unit.SidePreference = neighbor.SidePreference;
+                }
+                else if (neighbor.SidePreference == 0 && unit.SidePreference == 0)
+                {
+                    unit.SidePreference = ChooseSignVelocity(unit, neighbor);
                 }
 
-                var neighbor = Units[neighborIdx];
+                var relativeDir = math.normalizesafe(unit.Position - neighbor.Position);
 
-                var collisionRadiusSq = 2.25f * unit.Radius * unit.Radius;
-                var closeRadiusSq = 1.25f * 1.25f * unit.Radius * unit.Radius;
+                var angle = math.radians(unit.SidePreference * MoveRotateAmount);
+                relativeDir = math.mul(quaternion.RotateY(angle), relativeDir);
 
-                if (!neighbor.Resolved && dirLenSqr <= collisionRadiusSq)
+                var target = neighbor.Position + relativeDir * (neighbor.Radius + MoveClearance * unit.Radius);
+
+                var desiredDir = math.normalizesafe(target - unit.Position);
+
+                unit.PreferredDir = desiredDir;
+            }
+            else
+            {
+                float3 target;
+                if (unit.SidePreference == 0)
                 {
-                    if (StopFromCollision(unit, neighbor))
-                    {
-                        return true;
-                    }
+                    unit.SidePreference = ChooseSign(unit, neighbor, out target);
                 }
-                else if (neighbor.Resolved && neighbor.CurrentGroup == unit.CurrentGroup)
+                else
                 {
-                    return true;
+                    var relativeDir = math.normalizesafe(unit.Position - neighbor.Position);
+                    relativeDir = math.mul(quaternion.RotateY(unit.SidePreference * RotateAmount), relativeDir);
+                    target = neighbor.Position + relativeDir * (neighbor.Radius + 2 * unit.Radius);
                 }
+
+                var desiredDir = math.normalizesafe(target - unit.Position);
+                unit.PreferredDir = desiredDir;
+
+                /*
+                    Post check to make sure the side preference doesn't violate any constraints
+                    For instance - if a neighbor outside the viable neighbors is blocking the side
+                    that this unit's trying to go, this unit should try swapping sides
+                */
+                // if (unit.SidePreference != 0)
+                // {
+                //     var rotation = quaternion.Euler(0, signedangle(math.forward(), unit.PreferredVelocity, math.up()), 0);
+
+                //     var forward = math.mul(rotation, math.forward());
+
+                //     var leftPoint = unit.Position + unit.Radius * math.mul(rotation, math.left());
+                //     var leftPlane = new MathUtil.Plane(math.cross(math.up(), forward), leftPoint);
+
+                //     var rightPoint = unit.Position + unit.Radius * math.mul(rotation, math.right());
+                //     var rightPlane = new MathUtil.Plane(math.cross(forward, math.up()), rightPoint);
+
+                //     var backPlane = new MathUtil.Plane(forward, unit.Position);
+
+                //     var overlaps = Physics.OverlapSphere(
+                //         unit.Position,
+                //         unit.Radius + unit.MaxSpeed * 0.05f,
+                //         Util.Layers.PlayerAndAIUnitMask);
+
+                //     for (int neighborIdx = 0; neighborIdx < neighborIndicies.Length; neighborIdx++)
+                //     {
+                //         var neighbor = neighborIndicies[neighborIdx];
+                //     }
+
+                //     foreach (var overlap in overlaps)
+                //     {
+                //         if (overlap.gameObject == unit)
+                //         {
+                //             continue;
+                //         }
+
+                //         // Make sure neighbor is blocking the direction the direction 
+                //         // that this unit's headed towards
+                //         if (
+                //             MathUtil.OnPositiveHalfPlane(leftPlane, neighbor.Position, neighbor.Radius)
+                //             && MathUtil.OnPositiveHalfPlane(rightPlane, neighbor.Position, neighbor.Radius)
+                //             && MathUtil.OnPositiveHalfPlane(backPlane, neighbor.Position, neighbor.Radius))
+                //         {
+                //             if (!neighbors.Contains(neighbor) && neighbor.HoldingPosition)
+                //             {
+                //                 unit.SidePreference = -unit.SidePreference;
+                //             }
+                //         }
+                //     }
+                // }
             }
         }
-
-
-        return false;
-    }
-
-    public void CheckStop(ref NativeMultiHashMap<int, int> neighbors)
-    {
-        // Detect stopping
-        for (int i = 0; i < Units.Length; i++)
+        else
         {
-            var unit = Units[i];
-            if (!unit.Resolved)
-            {
-                if (CheckUnitStop(i, ref neighbors))
-                {
-                    unit.Velocity = Vector3.zero;
-                    unit.Resolved = true;
-                    Units[i] = unit;
-                }
-            }
+            unit.SidePreference = 0;
         }
+
+        return unit;
     }
 
     public void Execute()
     {
-        // Update heuristics
+        var neighbors = BroadPhase();
+
+        // Pre-physics updates
         for (int i = 0; i < Units.Length; i++)
         {
+            // Set low Velocity indicators - used to stop units that are stuck
+            // in low velocities for too long
             var unit = Units[i];
             if (unit.Resolved || (!unit.Resolved && math.lengthsq(unit.Velocity) > 2.25))
             {
@@ -134,12 +199,20 @@ public struct PhysicsJob : IJob
                 unit.LowVelocityElapsed += DeltaTime;
             }
 
+            // Set preferred velocites - used to calculate where units should be
+            if (!unit.Resolved)
+            {
+                unit = CalculatePreferredDirection(unit, neighbors.GetValuesForKey(i));
+            }
+            else
+            {
+                unit.SidePreference = 0;
+            }
+
             Units[i] = unit;
         }
 
-        var neighbors = BroadPhase(SpatialHashMeta, SpatialHashMap);
-
-        // resolve physics
+        // Resolve physics
         var sdt = DeltaTime / Substeps;
 
         for (int substep = 0; substep < Substeps; substep++)
@@ -150,13 +223,14 @@ public struct PhysicsJob : IJob
 
                 if (unit.Resolved)
                 {
-                    unit.Velocity = CalculatePush(i, neighbors.GetValuesForKey(i));
+                    if (!unit.HoldingPosition)
+                    {
+                        unit.Velocity = CalculatePush(i, neighbors);
+                    }
                 }
                 else
                 {
-                    var dir = math.normalizesafe(unit.TargetPosition - unit.Position);
-                    unit.Velocity += dir * unit.Acceleration * sdt;
-
+                    unit.Velocity += unit.PreferredDir * unit.Acceleration * sdt;
                     if (math.lengthsq(unit.Velocity) > unit.MaxSpeed * unit.MaxSpeed)
                     {
                         unit.Velocity = math.normalizesafe(unit.Velocity) * unit.MaxSpeed;
@@ -180,6 +254,20 @@ public struct PhysicsJob : IJob
                     var body1 = Units[i];
                     var body2 = Units[neighborIdx];
 
+                    var body1EffectiveMass = body1.Mass;
+                    var body2EffectiveMass = body2.Mass;
+
+                    if (body1.HoldingPosition && !body2.HoldingPosition)
+                    {
+                        body1EffectiveMass = 1;
+                        body2EffectiveMass = 0;
+                    }
+                    else if (!body1.HoldingPosition && body2.HoldingPosition)
+                    {
+                        body1EffectiveMass = 0;
+                        body2EffectiveMass = 1;
+                    }
+
                     var dir = body2.Position - body1.Position;
                     var separation = math.length(dir);
 
@@ -187,12 +275,12 @@ public struct PhysicsJob : IJob
 
                     if (separation < collideRadius)
                     {
-                        var totalMass = body1.Mass + body2.Mass;
+                        var totalMass = body1EffectiveMass + body2EffectiveMass;
 
                         var slop = collideRadius - separation;
 
-                        var x1 = -body2.Mass / totalMass * slop * math.normalizesafe(dir);
-                        var x2 = body1.Mass / totalMass * slop * math.normalizesafe(dir);
+                        var x1 = -body2EffectiveMass / totalMass * slop * math.normalizesafe(dir);
+                        var x2 = body1EffectiveMass / totalMass * slop * math.normalizesafe(dir);
 
                         body1.Position += x1;
                         body2.Position += x2;
@@ -245,7 +333,214 @@ public struct PhysicsJob : IJob
         }
 
         // Post
-        CheckStop(ref neighbors);
+        CheckStop(neighbors);
+    }
+
+    private int ChooseSign(MovementComponent unit, MovementComponent neighbor, out float3 target)
+    {
+        var relativeDir = math.normalizesafe(unit.Position - neighbor.Position);
+        var rightDir = math.mul(quaternion.RotateY(RotateAmount), relativeDir);
+        var rightTarget = neighbor.Position + rightDir * (neighbor.Radius + 2 * unit.Radius);
+        var rightSqrDst = math.lengthsq(unit.TargetPosition - rightTarget);
+
+        var leftDir = math.mul(quaternion.RotateY(-RotateAmount), relativeDir);
+        var leftTarget = neighbor.Position + leftDir * (neighbor.Radius + 2 * unit.Radius);
+        var leftSqrDst = math.lengthsq(unit.TargetPosition - leftTarget);
+
+        if (rightSqrDst < leftSqrDst)
+        {
+            target = rightTarget;
+            return 1;
+        }
+
+        target = leftTarget;
+        return -1;
+    }
+
+
+    private int ChooseSignVelocity(MovementComponent unit, MovementComponent neighbor)
+    {
+        var neighborDesiredDir = neighbor.TargetPosition - neighbor.Position;
+        var relativeDir = neighbor.Position - unit.Position;
+
+        var a = unit.Position;
+        var b = unit.Position + relativeDir;
+        var c = unit.Position + neighborDesiredDir;
+
+        if (MathUtil.LeftOf(a, b, c) > 0)
+        {
+            return -1;
+        }
+
+        return 1;
+    }
+
+    private AvoidanceType GetAvoidanceType(MovementComponent unit)
+    {
+        if (!unit.Resolved)
+        {
+            return AvoidanceType.Moving;
+        }
+        else
+        {
+            return AvoidanceType.Stationary;
+        }
+    }
+
+    private bool ResolveEnemyConstraints(MovementComponent unit, int neighborIdx)
+    {
+        if (unit.Target == neighborIdx)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool ResolveFriendConstraints(MovementComponent unit, MovementComponent neighbor, float avoidancePriority)
+    {
+        if (neighbor.Attacking)
+        {
+            return true;
+        }
+
+        var avoidanceType = GetAvoidanceType(neighbor);
+
+        var validResolveState = !neighbor.Resolved || (neighbor.Resolved && neighbor.HoldingPosition);
+
+        var neighborInCombat = NeighborInCombat(unit, neighbor);
+        var validNonCombatConstraint = !neighborInCombat && ResolveFriendNonCombatConstraints(unit, neighbor, avoidancePriority);
+
+        if ((int)avoidanceType >= avoidancePriority
+                && validResolveState
+                && validNonCombatConstraint)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    private bool NeighborInCombat(MovementComponent unit, MovementComponent neighbor)
+    {
+        return neighbor.Attacking;
+        // return neighbor.Attacking || (neighbor.InAlertRange && neighborUnitComponent.Target == unitComponent.Target);
+    }
+
+
+    private bool ResolveFriendNonCombatConstraints(MovementComponent unit, MovementComponent neighbor, float avoidancePriority)
+    {
+        // Test if same group or going towards the same direction
+        var sameGroup = unit.CurrentGroup != -1 && neighbor.CurrentGroup == unit.CurrentGroup;
+
+        var sameDirection = false;
+        var unitDesiredDir = unit.TargetPosition - unit.Position;
+
+        if (math.lengthsq(neighbor.Velocity) > Mathf.Epsilon)
+        {
+            // Only check same direction if neighbor's velocity is greater than zero
+            // otherwise, if a unit is stationary and got pushed, this might cause
+            // problems with avoiding units getting stuck on this neighbor
+            var neighborDesiredDir = neighbor.TargetPosition - neighbor.Position;
+
+            if (math.lengthsq(neighborDesiredDir) > Mathf.Epsilon)
+            {
+                if (math.abs(signedangle(unitDesiredDir, neighborDesiredDir, math.up())) < 30)
+                {
+                    sameDirection = true;
+                }
+            }
+        }
+
+        return !sameDirection && !sameGroup;
+    }
+
+    private bool ValidTargetPositionConstraint(MovementComponent unit, MovementComponent neighbor)
+    {
+        var relativeDir = unit.Position - neighbor.Position;
+        var plane = new MathUtil.Plane(relativeDir, neighbor.Position);
+        var onPositiveHalfPlane = MathUtil.OnPositiveHalfPlane(plane, unit.TargetPosition, 0);
+
+        // Note - apply the second part of this check to Resolved units ONLY since
+        // units moving in opposite directions could stick to each other if one
+        // of them has a bad side preference choice
+        // return !onPositiveHalfPlane || (neighbor.Resolved && onPositiveHalfPlane && unit.SidePreference != 0);
+        return !onPositiveHalfPlane;
+    }
+
+    public bool CheckUnitStop(int unitIdx, NativeMultiHashMap<int, int> neighbors)
+    {
+        var unit = Units[unitIdx];
+        var dir = unit.TargetPosition - unit.Position;
+        var dirLenSqr = math.lengthsq(dir);
+
+        // Stop if this unit is very close to the target position
+        if (dirLenSqr < 0.001f)
+        {
+            return true;
+        }
+
+        // Stop if this unit "goes over" the target position
+        var startingDir = unit.TargetPosition - unit.MoveStartPosition;
+        if (math.dot(startingDir, dir) < 0)
+        {
+            return true;
+        }
+
+        var cutoffSqThreshold = unit.Radius + 0.05f;
+        var cutoffSpeedSqThreshold = unit.MaxSpeed * 0.25f;
+        if (math.lengthsq(unit.Velocity) < cutoffSpeedSqThreshold * cutoffSpeedSqThreshold
+                && dirLenSqr < cutoffSqThreshold * cutoffSqThreshold)
+        {
+            return true;
+        }
+
+        var neighborIndicies = neighbors.GetValuesForKey(unitIdx);
+        foreach (var neighborIdx in neighborIndicies)
+        {
+            if (neighborIdx == unitIdx)
+            {
+                continue;
+            }
+
+            var neighbor = Units[neighborIdx];
+            if (neighbor.Resolved
+                    && unit.CurrentGroup != -1
+                    && neighbor.CurrentGroup == unit.CurrentGroup)
+            {
+                var collisionRadius = neighbor.Radius + unit.Radius + 0.05f;
+                var relDirSq = math.lengthsq(neighbor.Position - unit.Position);
+                if (relDirSq > collisionRadius * collisionRadius)
+                {
+                    continue;
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void CheckStop(NativeMultiHashMap<int, int> neighbors)
+    {
+        // Detect stopping
+        for (int i = 0; i < Units.Length; i++)
+        {
+            var unit = Units[i];
+            if (!unit.Resolved)
+            {
+                if (CheckUnitStop(i, neighbors))
+                {
+                    unit.Velocity = Vector3.zero;
+                    unit.Resolved = true;
+                    unit.TargetPosition = unit.Position;
+                    Units[i] = unit;
+                }
+            }
+        }
     }
 
     public static float signedangle(float3 from, float3 to, float3 axis)
@@ -255,22 +550,20 @@ public struct PhysicsJob : IJob
         return math.degrees(angle * sign);
     }
 
-    private float3 CalculatePush(int unitIdx, NativeMultiHashMap<int, int>.Enumerator neighbors)
+    private float3 CalculatePush(int unitIdx, NativeMultiHashMap<int, int> neighbors)
     {
         var unit = Units[unitIdx];
 
         // Get nearest colliding neighbor, where the neighbor is moving towards
         // this unit
-
-
-
         var calculatedVelocity = float3.zero;
         var count = 0;
 
         var resolvedVelocity = float3.zero;
         var resolvedCnt = 0;
 
-        foreach (var neighborIdx in neighbors)
+        var neighborIndexes = neighbors.GetValuesForKey(unitIdx);
+        foreach (var neighborIdx in neighborIndexes)
         {
             if (neighborIdx == unitIdx)
             {
@@ -290,8 +583,9 @@ public struct PhysicsJob : IJob
                 {
                     var angle = signedangle(velocity, relDir, Vector3.up);
                     var angleSign = math.sign(angle);
+                    var rotateRadius = math.radians(angleSign * 90);
 
-                    var rotation = quaternion.Euler(0, angleSign * 90, 0);
+                    var rotation = quaternion.Euler(0, rotateRadius, 0);
                     var perpVelocity = math.mul(rotation, velocity);
 
                     // Add a lower bound so that turn rate is faster
@@ -344,12 +638,12 @@ public struct PhysicsJob : IJob
     }
 
 
-    private Cell ComputeRowColumns(SpatialHashMeta meta, int idx)
+    private Cell ComputeCell(SpatialHashMeta meta, int idx)
     {
         var position = Units[idx].Position;
         var rel = position - meta.Origin;
-        var row = Mathf.FloorToInt(rel.z / meta.Size);
-        var column = Mathf.FloorToInt(rel.x / meta.Size);
+        var row = (int)math.floor(rel.z / meta.Size);
+        var column = (int)math.floor(rel.x / meta.Size);
 
         return new Cell()
         {
@@ -364,51 +658,72 @@ public struct PhysicsJob : IJob
         return hash;
     }
 
-    public NativeMultiHashMap<int, int> BroadPhase(SpatialHashMeta meta, NativeMultiHashMap<int, int> spatialHash)
+    private int GetCellRange(MovementComponent unit, Cell cell)
+    {
+        var range = unit.Radius + unit.MaxSpeed * unit.TimeHorizon;
+
+        var val = range / SpatialHashMeta.Size;
+        var cnt = (int)val;
+        if (cnt < val)
+        {
+            cnt++;
+        }
+
+        return cnt;
+    }
+
+    private NativeMultiHashMap<int, int> BroadPhase()
     {
         var neighbors = new NativeMultiHashMap<int, int>(Units.Length * 15, Allocator.Temp);
-
-        for (int i = 0; i < Units.Length; i++)
+        for (int unitIdx = 0; unitIdx < Units.Length; unitIdx++)
         {
-            var cell = ComputeRowColumns(meta, i);
+            var unit = Units[unitIdx];
+            var cell = ComputeCell(SpatialHashMeta, unitIdx);
 
-            var cells = new NativeArray<Cell>(9, Allocator.Temp);
-            cells[0] = cell;
-            cells[1] = new Cell(cell.Row + 1, cell.Column);
-            cells[2] = new Cell(cell.Row + 1, cell.Column + 1);
-            cells[3] = new Cell(cell.Row, cell.Column + 1);
-            cells[4] = new Cell(cell.Row - 1, cell.Column + 1);
-            cells[5] = new Cell(cell.Row - 1, cell.Column);
-            cells[6] = new Cell(cell.Row - 1, cell.Column - 1);
-            cells[7] = new Cell(cell.Row, cell.Column - 1);
-            cells[8] = new Cell(cell.Row + 1, cell.Column - 1);
-
-            var hashes = new NativeList<int>(9, Allocator.Temp);
-
-            foreach (var neighborCell in cells)
+            int cellRange;
+            if (unit.Resolved)
             {
-                if (neighborCell.Row >= 0
-                        && neighborCell.Row < meta.Rows
-                        && neighborCell.Column >= 0
-                        && neighborCell.Column < meta.Columns)
+                cellRange = 1;
+            }
+            else
+            {
+                cellRange = GetCellRange(unit, cell);
+            }
+
+            var minRow = cell.Row - cellRange;
+            var minCol = cell.Column - cellRange;
+
+            var range = 2 * cellRange + 1;
+
+            var hashes = new NativeList<int>(range * range, Allocator.Temp);
+            for (int row = 0; row < range; row++)
+            {
+                for (int col = 0; col < range; col++)
                 {
-                    hashes.Add(ComputeSpatialHash(meta, neighborCell));
+                    var neighborCell = new Cell(minRow + row, minCol + col);
+                    if (neighborCell.Row >= 0
+                        && neighborCell.Row < SpatialHashMeta.Rows
+                        && neighborCell.Column >= 0
+                        && neighborCell.Column < SpatialHashMeta.Columns)
+                    {
+                        hashes.Add(ComputeSpatialHash(SpatialHashMeta, neighborCell));
+                    }
                 }
             }
 
             foreach (var hash in hashes)
             {
-                if (!spatialHash.ContainsKey(hash))
+                if (!SpatialHashMap.ContainsKey(hash))
                 {
                     continue;
                 }
 
-                var indices = spatialHash.GetValuesForKey(hash);
-                foreach (var index in indices)
+                var neighborIndices = SpatialHashMap.GetValuesForKey(hash);
+                foreach (var neighborIdx in neighborIndices)
                 {
-                    if (index != i)
+                    if (neighborIdx != unitIdx)
                     {
-                        neighbors.Add(i, index);
+                        neighbors.Add(unitIdx, neighborIdx);
                     }
                 }
             }

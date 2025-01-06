@@ -46,6 +46,8 @@ public struct Config
     public float TimeHorizon;
 
     public float LowVelocityDuration;
+
+    public bool HoldingPosition;
 }
 
 [System.Serializable]
@@ -71,6 +73,10 @@ public struct MovementComponent
     public float LowVelocityDuration;
     public float LowVelocityElapsed;
 
+    // Combat
+    public int Target;
+    public bool Attacking;
+
     // Physics
     public float Mass;
     public float3 Velocity;
@@ -79,6 +85,9 @@ public struct MovementComponent
     public float3 OldPosition;
     public float3 TargetPosition;
     public float Orientation;
+
+    public float3 PreferredVelocity;
+    public float3 PreferredDir;
 
     public int CurrentGroup;
 
@@ -93,12 +102,15 @@ public struct MovementComponent
         TimeHorizon = unitController.Config.TimeHorizon;
 
         Resolved = true;
-        HoldingPosition = false;
+        HoldingPosition = unitController.Config.HoldingPosition;
         LastPushedByFriendlyNeighborTime = -math.INFINITY;
         LastMoveTime = -math.INFINITY;
         SidePreference = 0;
         LowVelocityDuration = unitController.Config.LowVelocityDuration;
         LowVelocityElapsed = 0;
+
+        Target = -1;
+        Attacking = false;
 
         Mass = unitController.Config.Mass;
         Velocity = float3.zero;
@@ -107,6 +119,9 @@ public struct MovementComponent
         OldPosition = unitController.transform.position;
         TargetPosition = unitController.transform.position;
         Orientation = 0;
+
+        PreferredVelocity = float3.zero;
+        PreferredDir = float3.zero;
 
         CurrentGroup = -1;
     }
