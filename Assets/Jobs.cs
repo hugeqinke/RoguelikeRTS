@@ -206,7 +206,7 @@ public struct PhysicsJob : IJob
             if (unit.Resolved && unit.CurrentGroup == -1)
             {
                 var stopDstSq = math.lengthsq(unit.Position - unit.StopPosition);
-                if (stopDstSq >= 4)
+                if (stopDstSq >= 16)
                 {
                     unit.MoveStartPosition = unit.Position;
                     unit.Resolved = false;
