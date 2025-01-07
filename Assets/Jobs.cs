@@ -17,8 +17,6 @@ public struct PhysicsJob : IJob
     public int Substeps;
     public float DeltaTime;
     public float RotateAmount;
-    public float MoveRotateAmount;
-    public float MoveClearance;
 
     private int ChooseNeighbor(MovementComponent unit, NativeMultiHashMap<int, int>.Enumerator neighborIndexes)
     {
@@ -94,14 +92,8 @@ public struct PhysicsJob : IJob
 
                 var relativeDir = math.normalizesafe(unit.Position - neighbor.Position);
 
-                var angle = math.radians(unit.SidePreference * MoveRotateAmount);
-                relativeDir = math.mul(quaternion.RotateY(angle), relativeDir);
-
-                var target = neighbor.Position + relativeDir * (neighbor.Radius + MoveClearance * unit.Radius);
-
-                var desiredDir = math.normalizesafe(target - unit.Position);
-
-                unit.PreferredDir = desiredDir;
+                var angle = math.radians(unit.SidePreference * 90);
+                unit.PreferredDir = math.mul(quaternion.RotateY(angle), relativeDir);
             }
             else
             {
@@ -434,7 +426,6 @@ public struct PhysicsJob : IJob
         // return neighbor.Attacking || (neighbor.InAlertRange && neighborUnitComponent.Target == unitComponent.Target);
     }
 
-
     private bool ResolveFriendNonCombatConstraints(MovementComponent unit, MovementComponent neighbor, float avoidancePriority)
     {
         // Test if same group or going towards the same direction
@@ -526,7 +517,8 @@ public struct PhysicsJob : IJob
                 {
                     // ignore units that are too far from their push zone
                     var neighborTargetLenSq = math.lengthsq(neighbor.StopPosition - neighbor.Position);
-                    if (math.dot(relativeDir, unit.Velocity) >= 0.5f && neighborTargetLenSq < 4)
+                    if (math.dot(relativeDir, unit.Velocity) >= 0.5f
+                            && neighborTargetLenSq < 4)
                     {
                         return true;
                     }

@@ -18,8 +18,6 @@ public class Simulator : MonoBehaviour
 
     public float MovingNeighborRadius;
     private static float rotateAmount = 30f;
-    public float MoveRotateAmount;
-    public float MoveClearance;
 
     public float AlertRadius;
 
@@ -215,8 +213,6 @@ public class Simulator : MonoBehaviour
             Units = movementComponents,
             DeltaTime = Time.fixedDeltaTime,
             RotateAmount = rotateAmount * Mathf.Deg2Rad,
-            MoveClearance = MoveClearance,
-            MoveRotateAmount = MoveRotateAmount
         };
 
         var physicsJobHandle = physicsJob.Schedule();
