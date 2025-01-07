@@ -3146,7 +3146,7 @@ MonoBehaviour:
   ResolveCollisionIterations: 1
   MovingNeighborRadius: 2
   MoveRotateAmount: 90
-  MoveClearance: 6
+  MoveClearance: 4
   AlertRadius: 2
   Units: []
   Transforms: []
@@ -3157,7 +3157,7 @@ MonoBehaviour:
     Columns: 50
     Size: 1
     Center: {fileID: 1377604679}
-  Substeps: 8
+  Substeps: 2
   DBGTarget: 0
   DBGResolvedState: 1
   DBGForward: 1

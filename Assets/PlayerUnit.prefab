@@ -236,8 +236,9 @@ MonoBehaviour:
     Mass: 1
     MaxAcceleration: 1000
     ReturnRadius: 5
+    CompactRadius: 0
     TimeHorizon: 0.25
-    LowVelocityDuration: 0.5
+    NoProgressDuration: 0.25
     HoldingPosition: 0
   DBG_Movement:
     Owner: 0
@@ -245,14 +246,13 @@ MonoBehaviour:
     MaxSpeed: 0
     Acceleration: 0
     ReturnRadius: 0
+    CompactRadius: 0
     TimeHorizon: 0
     Resolved: 0
     HoldingPosition: 0
     LastPushedByFriendlyNeighborTime: 0
     LastMoveTime: 0
     SidePreference: 0
-    LowVelocityDuration: 0
-    LowVelocityElapsed: 0
     Target: 0
     Attacking: 0
     Mass: 0
@@ -277,6 +277,8 @@ MonoBehaviour:
       y: 0
       z: 0
     Orientation: 0
+    NoProgressDuration: 0
+    NoProgressElapsed: 0
     PreferredVelocity:
       x: 0
       y: 0

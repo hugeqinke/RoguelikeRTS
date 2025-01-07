@@ -282,7 +282,7 @@ public class Simulator : MonoBehaviour
                     Gizmos.color = Color.green;
                 }
 
-                Gizmos.DrawWireSphere(movementComponent.Position + new float3(0, 2, 0), 0.5f);
+                Gizmos.DrawWireSphere(movementComponent.Position + new float3(0, 0.5f, 0), 0.5f);
             }
         }
 

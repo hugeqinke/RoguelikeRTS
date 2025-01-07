@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Mathematics;
+using Unity.Collections;
 
 public class UnitController : MonoBehaviour, IComponent
 {
@@ -43,9 +44,8 @@ public struct Config
     public float Mass;
     public float MaxAcceleration;
     public float ReturnRadius;
+    public float CompactRadius;
     public float TimeHorizon;
-
-    public float LowVelocityDuration;
 
     public bool HoldingPosition;
 }
@@ -61,6 +61,7 @@ public struct MovementComponent
     public float MaxSpeed;
     public float Acceleration;
     public float ReturnRadius;
+    public float CompactRadius;
     public float TimeHorizon;
 
     // State + Movement heuristics
@@ -69,9 +70,6 @@ public struct MovementComponent
     public float LastPushedByFriendlyNeighborTime;
     public float LastMoveTime; // Last TimeStep where velocity sqrDist was greater than zero
     public int SidePreference; // Side preference key: -1 -> left / 0 -> none / 1 -> right
-
-    public float LowVelocityDuration;
-    public float LowVelocityElapsed;
 
     // Combat
     public int Target;
@@ -84,6 +82,7 @@ public struct MovementComponent
     public float3 Position;
     public float3 OldPosition;
     public float3 TargetPosition;
+    public float3 EndPosition;
     public float Orientation;
 
     public float3 PreferredVelocity;
@@ -99,6 +98,7 @@ public struct MovementComponent
         MaxSpeed = unitController.Config.MaxSpeed;
         Acceleration = unitController.Config.MaxAcceleration;
         ReturnRadius = unitController.Config.ReturnRadius;
+        CompactRadius = unitController.Config.CompactRadius;
         TimeHorizon = unitController.Config.TimeHorizon;
 
         Resolved = true;
@@ -106,8 +106,6 @@ public struct MovementComponent
         LastPushedByFriendlyNeighborTime = -math.INFINITY;
         LastMoveTime = -math.INFINITY;
         SidePreference = 0;
-        LowVelocityDuration = unitController.Config.LowVelocityDuration;
-        LowVelocityElapsed = 0;
 
         Target = -1;
         Attacking = false;
@@ -118,6 +116,7 @@ public struct MovementComponent
         Position = unitController.transform.position;
         OldPosition = unitController.transform.position;
         TargetPosition = unitController.transform.position;
+        EndPosition = unitController.transform.position;
         Orientation = 0;
 
         PreferredVelocity = float3.zero;

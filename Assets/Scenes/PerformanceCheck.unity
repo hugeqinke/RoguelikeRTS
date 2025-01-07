@@ -18186,7 +18186,9 @@ MonoBehaviour:
   ResponseCoefficient: 1
   InputManager: {fileID: 465716417}
   ResolveCollisionIterations: 1
-  MovingNeighborRadius: 0.5
+  MovingNeighborRadius: 2
+  MoveRotateAmount: 90
+  MoveClearance: 4
   AlertRadius: 2
   Units: []
   Transforms: []
@@ -18197,7 +18199,7 @@ MonoBehaviour:
     Columns: 50
     Size: 1
     Center: {fileID: 1377604679}
-  Substeps: 5
+  Substeps: 2
   DBGTarget: 0
   DBGResolvedState: 1
   DBGForward: 0

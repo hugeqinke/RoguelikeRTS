@@ -190,14 +190,6 @@ public struct PhysicsJob : IJob
             // Set low Velocity indicators - used to stop units that are stuck
             // in low velocities for too long
             var unit = Units[i];
-            if (unit.Resolved || (!unit.Resolved && math.lengthsq(unit.Velocity) > 2.25))
-            {
-                unit.LowVelocityElapsed = 0;
-            }
-            else
-            {
-                unit.LowVelocityElapsed += DeltaTime;
-            }
 
             // Set preferred velocites - used to calculate where units should be
             if (!unit.Resolved)
@@ -317,19 +309,19 @@ public struct PhysicsJob : IJob
                 }
             }
 
-            // fix velocity 
-            for (int i = 0; i < Units.Length; i++)
-            {
-                var unit = Units[i];
+            // fix velocity
+            // for (int i = 0; i < Units.Length; i++)
+            // {
+            //     var unit = Units[i];
 
-                if (unit.Resolved)
-                {
-                    continue;
-                }
+            //     if (unit.Resolved)
+            //     {
+            //         continue;
+            //     }
 
-                unit.Velocity = (unit.Position - unit.OldPosition) / sdt;
-                Units[i] = unit;
-            }
+            //     unit.Velocity = (unit.Position - unit.OldPosition) / sdt;
+            //     Units[i] = unit;
+            // }
         }
 
         // Post
@@ -489,14 +481,6 @@ public struct PhysicsJob : IJob
             return true;
         }
 
-        var cutoffSqThreshold = unit.Radius + 0.05f;
-        var cutoffSpeedSqThreshold = unit.MaxSpeed * 0.25f;
-        if (math.lengthsq(unit.Velocity) < cutoffSpeedSqThreshold * cutoffSpeedSqThreshold
-                && dirLenSqr < cutoffSqThreshold * cutoffSqThreshold)
-        {
-            return true;
-        }
-
         var neighborIndicies = neighbors.GetValuesForKey(unitIdx);
         foreach (var neighborIdx in neighborIndicies)
         {
@@ -506,18 +490,31 @@ public struct PhysicsJob : IJob
             }
 
             var neighbor = Units[neighborIdx];
-            if (neighbor.Resolved
-                    && unit.CurrentGroup != -1
-                    && neighbor.CurrentGroup == unit.CurrentGroup)
+            var relativeDir = neighbor.Position - unit.Position;
+            var threshold = neighbor.Radius + unit.Radius + 0.05f;
+            if (math.lengthsq(relativeDir) > threshold * threshold)
             {
-                var collisionRadius = neighbor.Radius + unit.Radius + 0.05f;
-                var relDirSq = math.lengthsq(neighbor.Position - unit.Position);
-                if (relDirSq > collisionRadius * collisionRadius)
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                return true;
+            var relativeTargetDir = neighbor.TargetPosition - unit.TargetPosition;
+            if (math.lengthsq(relativeTargetDir) < 9)
+            {
+                if (!neighbor.Resolved)
+                {
+                    if (math.dot(relativeDir, unit.Velocity) >= 0
+                            && math.dot(unit.Velocity, neighbor.Velocity) < 0)
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    if (math.dot(relativeDir, unit.Velocity) >= 0)
+                    {
+                        return true;
+                    }
+                }
             }
         }
 
@@ -536,7 +533,7 @@ public struct PhysicsJob : IJob
                 {
                     unit.Velocity = Vector3.zero;
                     unit.Resolved = true;
-                    unit.TargetPosition = unit.Position;
+                    unit.EndPosition = unit.Position;
                     Units[i] = unit;
                 }
             }
