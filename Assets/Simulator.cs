@@ -112,6 +112,7 @@ public class Simulator : MonoBehaviour
             var idx = IndexMap[unit];
             var movementComponent = MovementComponents[idx];
             movementComponent.TargetPosition = positions[unit];
+            movementComponent.StopPosition = positions[unit];
             movementComponent.MoveStartPosition = movementComponent.Position;
             movementComponent.Resolved = false;
 
@@ -202,23 +203,7 @@ public class Simulator : MonoBehaviour
         var movementComponents = new NativeArray<MovementComponent>(allocSize, Allocator.TempJob);
         for (int i = 0; i < MovementComponents.Count; i++)
         {
-            var unit = MovementComponents[i];
-
-            // Some preliminary calculations we can't do in the job system
-            if (!unit.HoldingPosition && unit.Resolved)
-            {
-                var relativeSqrDst = math.lengthsq(unit.TargetPosition - unit.Position);
-                var thresholdSqrRadius = unit.ReturnRadius * unit.ReturnRadius;
-
-                if (relativeSqrDst > thresholdSqrRadius)
-                {
-                    unit.Resolved = false;
-                    unit.MoveStartPosition = unit.Position;
-                }
-            }
-
-            movementComponents[i] = unit;
-
+            movementComponents[i] = MovementComponents[i];
         }
 
         var physicsJob = new PhysicsJob()
@@ -283,6 +268,10 @@ public class Simulator : MonoBehaviour
                 }
 
                 Gizmos.DrawWireSphere(movementComponent.Position + new float3(0, 0.5f, 0), 0.5f);
+                // Gizmos.color = Color.green;
+                // Gizmos.DrawLine(movementComponent.Position, movementComponent.TargetPosition);
+                // Gizmos.color = Color.red;
+                // Gizmos.DrawLine(movementComponent.Position, movementComponent.StopPosition);
             }
         }
 
@@ -561,6 +550,7 @@ public class MoveGroupPool
         {
             var movement = simulator.MovementComponents[idx];
             movement.CurrentGroup = -1;
+            movement.TargetPosition = movement.StopPosition;
             simulator.MovementComponents[idx] = movement;
         }
 

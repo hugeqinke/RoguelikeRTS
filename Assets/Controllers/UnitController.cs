@@ -43,9 +43,9 @@ public struct Config
     public float MaxSpeed;
     public float Mass;
     public float MaxAcceleration;
-    public float ReturnRadius;
-    public float CompactRadius;
     public float TimeHorizon;
+
+    public float PushDuration;
 
     public bool HoldingPosition;
 }
@@ -60,16 +60,19 @@ public struct MovementComponent
     // Config
     public float MaxSpeed;
     public float Acceleration;
-    public float ReturnRadius;
-    public float CompactRadius;
     public float TimeHorizon;
 
     // State + Movement heuristics
     public bool Resolved;
     public bool HoldingPosition;
-    public float LastPushedByFriendlyNeighborTime;
-    public float LastMoveTime; // Last TimeStep where velocity sqrDist was greater than zero
     public int SidePreference; // Side preference key: -1 -> left / 0 -> none / 1 -> right
+
+    // Pushing
+    public float PushDuration;
+    public float LastPushTime;
+
+    public float ResetTargetPositionDuration;
+    public float ResetTargetPositionElapsed;
 
     // Combat
     public int Target;
@@ -82,10 +85,9 @@ public struct MovementComponent
     public float3 Position;
     public float3 OldPosition;
     public float3 TargetPosition;
-    public float3 EndPosition;
+    public float3 StopPosition; // This is where the unit actually stopped
     public float Orientation;
 
-    public float3 PreferredVelocity;
     public float3 PreferredDir;
 
     public int CurrentGroup;
@@ -97,15 +99,17 @@ public struct MovementComponent
 
         MaxSpeed = unitController.Config.MaxSpeed;
         Acceleration = unitController.Config.MaxAcceleration;
-        ReturnRadius = unitController.Config.ReturnRadius;
-        CompactRadius = unitController.Config.CompactRadius;
         TimeHorizon = unitController.Config.TimeHorizon;
 
         Resolved = true;
         HoldingPosition = unitController.Config.HoldingPosition;
-        LastPushedByFriendlyNeighborTime = -math.INFINITY;
-        LastMoveTime = -math.INFINITY;
         SidePreference = 0;
+
+        PushDuration = unitController.Config.PushDuration;
+        LastPushTime = 0f;
+
+        ResetTargetPositionDuration = 0f;
+        ResetTargetPositionElapsed = 0f;
 
         Target = -1;
         Attacking = false;
@@ -114,12 +118,11 @@ public struct MovementComponent
         Velocity = float3.zero;
         MoveStartPosition = unitController.transform.position;
         Position = unitController.transform.position;
+        StopPosition = unitController.transform.position;
         OldPosition = unitController.transform.position;
         TargetPosition = unitController.transform.position;
-        EndPosition = unitController.transform.position;
         Orientation = 0;
 
-        PreferredVelocity = float3.zero;
         PreferredDir = float3.zero;
 
         CurrentGroup = -1;

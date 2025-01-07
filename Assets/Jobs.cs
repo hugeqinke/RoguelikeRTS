@@ -201,6 +201,19 @@ public struct PhysicsJob : IJob
                 unit.SidePreference = 0;
             }
 
+            // Check if this unit got pushed too much and should return to its
+            // stop position
+            if (unit.Resolved && unit.CurrentGroup == -1)
+            {
+                var stopDstSq = math.lengthsq(unit.Position - unit.StopPosition);
+                if (stopDstSq >= 4)
+                {
+                    unit.MoveStartPosition = unit.Position;
+                    unit.Resolved = false;
+                    unit.TargetPosition = unit.StopPosition;
+                }
+            }
+
             Units[i] = unit;
         }
 
@@ -425,7 +438,7 @@ public struct PhysicsJob : IJob
     private bool ResolveFriendNonCombatConstraints(MovementComponent unit, MovementComponent neighbor, float avoidancePriority)
     {
         // Test if same group or going towards the same direction
-        var sameGroup = unit.CurrentGroup != -1 && neighbor.CurrentGroup == unit.CurrentGroup;
+        var sameGroup = neighbor.CurrentGroup == unit.CurrentGroup;
 
         var sameDirection = false;
         var unitDesiredDir = unit.TargetPosition - unit.Position;
@@ -498,19 +511,22 @@ public struct PhysicsJob : IJob
             }
 
             var relativeTargetDir = neighbor.TargetPosition - unit.TargetPosition;
-            if (math.lengthsq(relativeTargetDir) < 9)
+            if (math.lengthsq(relativeTargetDir) < 4)
             {
                 if (!neighbor.Resolved)
                 {
                     if (math.dot(relativeDir, unit.Velocity) >= 0
-                            && math.dot(unit.Velocity, neighbor.Velocity) < 0)
+                            && math.dot(unit.Velocity, neighbor.Velocity) < 0
+                            && dirLenSqr < 4)
                     {
                         return true;
                     }
                 }
                 else
                 {
-                    if (math.dot(relativeDir, unit.Velocity) >= 0)
+                    // ignore units that are too far from their push zone
+                    var neighborTargetLenSq = math.lengthsq(neighbor.StopPosition - neighbor.Position);
+                    if (math.dot(relativeDir, unit.Velocity) >= 0.5f && neighborTargetLenSq < 4)
                     {
                         return true;
                     }
@@ -533,7 +549,7 @@ public struct PhysicsJob : IJob
                 {
                     unit.Velocity = Vector3.zero;
                     unit.Resolved = true;
-                    unit.EndPosition = unit.Position;
+                    unit.StopPosition = unit.Position;
                     Units[i] = unit;
                 }
             }
