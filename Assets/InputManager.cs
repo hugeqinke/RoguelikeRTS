@@ -186,10 +186,10 @@ public class InputManager : MonoBehaviour
 
             var points = new List<float2>()
             {
-                unitPosition + new float2(0, 1) * unitController.Radius,
-                unitPosition - new float2(0, 1) * unitController.Radius,
-                unitPosition + new float2(1, 0) * unitController.Radius,
-                unitPosition - new float2(1, 0) * unitController.Radius
+                unitPosition + new float2(0, 1) * unitController.Config.Radius,
+                unitPosition - new float2(0, 1) * unitController.Config.Radius,
+                unitPosition + new float2(1, 0) * unitController.Config.Radius,
+                unitPosition - new float2(1, 0) * unitController.Config.Radius
             };
 
             // Debug.DrawRay(Vector3.zero, unit.transform.position, Color.blue, 10);

@@ -6,7 +6,6 @@ using Unity.Collections;
 
 public class UnitController : MonoBehaviour, IComponent
 {
-
     // Spherical selection triggers
     // I could just have a singular OBB trigger instead but that requires some 
     // additional code for the frustrum check, and woudl have
@@ -14,17 +13,6 @@ public class UnitController : MonoBehaviour, IComponent
     // on the corners for larger models and slightly more expensive computation
     public List<SphereCollider> SelectionTriggers;
     public GameObject SelectionHighlight;
-
-    public float Radius;
-
-    public Kinematic Kinematic;
-    public Owner Owner;
-
-    public GameObject Target;
-    public float AttackRadius;
-    public bool Attacking;
-
-    public bool InAlertRange;
 
     public Config Config;
     public MovementComponent DBG_Movement;
