@@ -102,29 +102,45 @@ public class Simulator : MonoBehaviour
         }
     }
 
+    public void SetAttackValues(GameObject unit, GameObject target)
+    {
+        var unitIdx = IndexMap[unit];
+        var targetIdx = IndexMap[target];
+        var movementComponent = MovementComponents[unitIdx];
+        movementComponent.Target = targetIdx;
+        MovementComponents[unitIdx] = movementComponent;
+    }
+
+    public void SetMovementValues(GameObject unit, float3 position)
+    {
+        var idx = IndexMap[unit];
+        var movementComponent = MovementComponents[idx];
+        movementComponent.TargetPosition = position;
+        movementComponent.StopPosition = position;
+        movementComponent.MoveStartPosition = movementComponent.Position;
+        movementComponent.Resolved = false;
+
+        var dir = position - movementComponent.Position;
+        if (math.lengthsq(dir) > Mathf.Epsilon)
+        {
+            movementComponent.Orientation = MathUtil.signedangle(
+                math.forward(),
+                dir,
+                math.up()
+            );
+
+            movementComponent.PreferredDir = math.normalize(dir);
+        }
+
+        MovementComponents[idx] = movementComponent;
+    }
+
     public void SetMovementValues(Dictionary<GameObject, Vector3> positions)
     {
         foreach (var kvp in positions)
         {
             var unit = kvp.Key;
-            var idx = IndexMap[unit];
-            var movementComponent = MovementComponents[idx];
-            movementComponent.TargetPosition = positions[unit];
-            movementComponent.StopPosition = positions[unit];
-            movementComponent.MoveStartPosition = movementComponent.Position;
-            movementComponent.Resolved = false;
-
-            var dir = positions[unit] - unit.transform.position;
-            if (dir.sqrMagnitude > Mathf.Epsilon)
-            {
-                movementComponent.Orientation = Vector3.SignedAngle(
-                    Vector3.forward,
-                    dir,
-                    Vector3.up
-                );
-            }
-
-            MovementComponents[idx] = movementComponent;
+            SetMovementValues(kvp.Key, kvp.Value);
         }
     }
 

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -64,6 +62,7 @@ public struct PhysicsJob : IJob
     }
 
     private MovementComponent CalculatePreferredDirection(
+            int unitIdx,
             MovementComponent unit,
             NativeMultiHashMap<int, int>.Enumerator neighborIndexes)
     {
@@ -168,25 +167,72 @@ public struct PhysicsJob : IJob
         {
             neighborIndexes.Reset();
 
-            var avgDir = unit.PreferredDir; ;
+            var avgDir = unit.PreferredDir;
             var count = 1;
+
+            var separationDir = float3.zero;
+            var separationCount = 0;
+
+            var otherSeparationDir = float3.zero;
+            var otherSeparationCount = 0;
+
             foreach (var idx in neighborIndexes)
             {
-                var neighborUnit = Units[idx];
-                if (neighborUnit.CurrentGroup == unit.CurrentGroup && neighborUnit.SidePreference != 0)
+                if (unitIdx == idx)
                 {
+                    continue;
+                }
+
+                var neighborUnit = Units[idx];
+
+                if (neighborUnit.CurrentGroup == unit.CurrentGroup)
+                {
+                    var relativeDir = unit.Position - neighborUnit.Position;
+
+                    // This 0.01 value MUST be smaller than whatever I set as a stop threshold
+                    // in CheckUnitStop, otherwise unit WILL NOT stop
+                    // TODO: maybe make this apparent in the editor
+                    var threshold = neighborUnit.Radius + unit.Radius + 0.01f;
+                    if (math.lengthsq(relativeDir) < threshold * threshold)
+                    {
+                        separationDir += math.normalizesafe(relativeDir);
+                        separationCount++;
+                    }
+
                     avgDir += neighborUnit.PreferredDir;
                     count++;
+                }
+                else if (!neighborUnit.Resolved && neighborUnit.CurrentGroup != unit.CurrentGroup)
+                {
+                    var relativeDir = unit.Position - neighborUnit.Position;
+                    var threshold = neighborUnit.Radius + unit.Radius + 4;
+                    if (math.lengthsq(relativeDir) < threshold * threshold)
+                    {
+                        otherSeparationDir += math.normalizesafe(relativeDir);
+                        otherSeparationCount++;
+                    }
                 }
             }
 
             if (count > 0)
             {
                 avgDir /= count;
-                unit.PreferredDir = math.normalizesafe(avgDir);
-            }
 
-            Debug.DrawRay(unit.Position, avgDir * 5, Color.blue);
+                if (separationCount > 0)
+                {
+                    separationDir /= separationCount;
+                }
+
+                if (otherSeparationCount > 0)
+                {
+                    otherSeparationDir /= otherSeparationCount;
+                }
+
+                // Debug.DrawRay(unit.Position, avgDir * 5, Color.blue);
+
+                unit.PreferredDir = math.normalizesafe(avgDir + unit.PreferredDir + 0.75f * separationDir + 0.75f * otherSeparationDir);
+                // Debug.DrawRay(unit.Position, unit.PreferredDir, Color.green);
+            }
 
             unit.SidePreference = 0;
         }
@@ -208,7 +254,7 @@ public struct PhysicsJob : IJob
             // Set preferred velocites - used to calculate where units should be
             if (!unit.Resolved)
             {
-                unit = CalculatePreferredDirection(unit, neighbors.GetValuesForKey(i));
+                unit = CalculatePreferredDirection(i, unit, neighbors.GetValuesForKey(i));
             }
             else
             {
@@ -326,8 +372,8 @@ public struct PhysicsJob : IJob
                 var relDirLenSq = math.lengthsq(relDir);
                 var moveDirSq = math.lengthsq(moveDir);
 
-                var cross = Vector3.Cross(relDir, moveDir);
-                var crossDirSq = cross.sqrMagnitude;
+                var cross = math.cross(relDir, moveDir);
+                var crossDirSq = math.lengthsq(cross);
 
                 if (relDirLenSq < moveDirSq && crossDirSq < 0.001f)
                 {

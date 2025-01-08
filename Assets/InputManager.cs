@@ -386,73 +386,36 @@ public class InputManager : MonoBehaviour
         return frustrum;
     }
 
-    // private bool IssueAttackOrder()
-    // {
-    //     ResetKinematics(_selectedUnits);
+    private bool IssueAttackOrder()
+    {
+        Simulator.ResetMovement(_selectedUnits);
 
-    //     var screenPoint = Mouse.current.position.ReadValue();
-    //     var ray = Camera.main.ScreenPointToRay(screenPoint);
+        var screenPoint = Mouse.current.position.ReadValue();
+        var ray = Camera.main.ScreenPointToRay(screenPoint);
 
-    //     if (Physics.Raycast(ray, out RaycastHit hit, InputUtils.MaxRaycastDistance, InputUtils.AIUnitLayerMask))
-    //     {
-    //         var enemyUnit = hit.collider.gameObject;
+        if (Physics.Raycast(
+                ray,
+                out RaycastHit hit,
+                InputUtils.MaxRaycastDistance,
+                InputUtils.AIUnitLayerMask))
+        {
+            var enemyObj = hit.collider.gameObject;
 
-    //         // Set move
-    //         var positions = CalculateInnerPosition(enemyUnit.transform.position);
-    //         SetMoveParameters(positions);
+            // Set move
+            var enemyUnitIdx = Simulator.IndexMap[enemyObj];
+            var enemyUnit = Simulator.MovementComponents[enemyUnitIdx];
 
-    //         // Set combat
-    //         foreach (var unit in _selectedUnits)
-    //         {
-    //             var unitComponent = Simulator.UnitControllers[unit];
-    //             unitComponent.Target = enemyUnit;
-    //         }
+            foreach (var unit in _selectedUnits)
+            {
+                Simulator.SetMovementValues(unit, enemyUnit.Position);
+                Simulator.SetAttackValues(unit, enemyObj);
+            }
 
-    //         return true;
-    //     }
+            return true;
+        }
 
-    //     return false;
-    // }
-
-    // private void SetMoveParameters(Dictionary<GameObject, Vector3> positions)
-    // {
-    //     var moveGroup = new MoveGroup();
-    //     foreach (var unit in _selectedUnits)
-    //     {
-    //         // Update unit state
-    //         var unitComponent = Simulator.UnitControllers[unit];
-    //         unitComponent.BasicMovement.TargetPosition = positions[unit];
-    //         unitComponent.BasicMovement.RelativeDeltaStart = positions[unit] - unit.transform.position;
-
-    //         var dir = positions[unit] - unit.transform.position;
-    //         if (dir.sqrMagnitude > Mathf.Epsilon)
-    //         {
-    //             unitComponent.Kinematic.Orientation = Vector3.SignedAngle(
-    //                 Vector3.forward,
-    //                 dir,
-    //                 Vector3.up
-    //             );
-    //         }
-
-    //         // Clear from old movegroup
-    //         if (MoveGroupMap.ContainsKey(unit))
-    //         {
-    //             var oldMoveGroup = MoveGroupMap[unit];
-    //             if (oldMoveGroup.Units.Contains(unit))
-    //             {
-    //                 oldMoveGroup.Units.Remove(unit);
-    //             }
-
-    //             MoveGroupMap.Remove(unit);
-    //         }
-
-    //         // Add to new MoveGroup
-    //         moveGroup.Units.Add(unit);
-    //         MoveGroupMap.Add(unit, moveGroup);
-    //     }
-
-    //     MoveGroups.Add(moveGroup);
-    // }
+        return false;
+    }
 
     private void IssueMoveOrder()
     {
@@ -489,10 +452,10 @@ public class InputManager : MonoBehaviour
     // Helper functions
     private void IssueOrder()
     {
-        // if (!IssueAttackOrder())
-        // {
-        IssueMoveOrder();
-        // }
+        if (!IssueAttackOrder())
+        {
+            IssueMoveOrder();
+        }
     }
 
     private void ClearCurrentSelection()
@@ -596,6 +559,13 @@ public static class InputUtils
 
 public static class MathUtil
 {
+    public static float signedangle(float3 from, float3 to, float3 axis)
+    {
+        float angle = math.acos(math.dot(math.normalize(from), math.normalize(to)));
+        float sign = math.sign(math.dot(axis, math.cross(from, to)));
+        return math.degrees(angle * sign);
+    }
+
     public static bool OnPositiveHalfPlane(MathUtil.Plane plane, Vector3 position, float radius)
     {
         var distanceToPlane = Vector3.Dot(plane.Normal, position) - plane.Distance;
