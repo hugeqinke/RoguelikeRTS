@@ -1495,7 +1495,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 6.5700006
+      value: 6.2500005
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1503,7 +1503,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 11.190001
+      value: 3.7800002
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1538,12 +1538,20 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
+      propertyPath: Config.Owner
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.MaxSpeed
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 6846543444978277801, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 82ab15922f1c85048aa9eec4447ef1d6, type: 2}
     - target: {fileID: 7968024303189016854, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_Name
-      value: PlayerUnit (550)
+      value: Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 7968024303189016854, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_IsActive
@@ -1604,9 +1612,7 @@ MonoBehaviour:
   ResponseCoefficient: 1
   InputManager: {fileID: 465716417}
   ResolveCollisionIterations: 1
-  MovingNeighborRadius: 1.5
-  MoveRotateAmount: 90
-  MoveClearance: 4
+  MovingNeighborRadius: 0.1
   AlertRadius: 2
   Units: []
   Transforms: []
@@ -1933,7 +1939,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 8
+      value: 7.68
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1941,7 +1947,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 12.64
+      value: 5.23
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1976,12 +1982,20 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
+      propertyPath: Config.Owner
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.MaxSpeed
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 6846543444978277801, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 82ab15922f1c85048aa9eec4447ef1d6, type: 2}
     - target: {fileID: 7968024303189016854, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_Name
-      value: PlayerUnit (551)
+      value: Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 7968024303189016854, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_IsActive
@@ -2978,7 +2992,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 5.51
+      value: 5.19
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.y
@@ -2986,7 +3000,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 12.299999
+      value: 4.889999
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalRotation.w
@@ -3021,12 +3035,20 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
+      propertyPath: Config.Owner
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.MaxSpeed
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 6846543444978277801, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 82ab15922f1c85048aa9eec4447ef1d6, type: 2}
     - target: {fileID: 7968024303189016854, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_Name
-      value: PlayerUnit (552)
+      value: Enemy
       objectReference: {fileID: 0}
     - target: {fileID: 7968024303189016854, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_IsActive
@@ -3328,6 +3350,9 @@ SceneRoots:
   - {fileID: 1414955111}
   - {fileID: 886160920}
   - {fileID: 465716416}
+  - {fileID: 1131052178}
+  - {fileID: 849096852}
+  - {fileID: 1893359758}
   - {fileID: 298891555}
   - {fileID: 430206947}
   - {fileID: 494025378}
@@ -3337,9 +3362,6 @@ SceneRoots:
   - {fileID: 1966345078}
   - {fileID: 1343313080}
   - {fileID: 305626939}
-  - {fileID: 1131052178}
-  - {fileID: 849096852}
-  - {fileID: 1893359758}
   - {fileID: 2035740079}
   - {fileID: 1106025881}
   - {fileID: 34082184}

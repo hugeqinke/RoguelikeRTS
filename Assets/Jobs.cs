@@ -166,6 +166,28 @@ public struct PhysicsJob : IJob
         }
         else
         {
+            neighborIndexes.Reset();
+
+            var avgDir = unit.PreferredDir; ;
+            var count = 1;
+            foreach (var idx in neighborIndexes)
+            {
+                var neighborUnit = Units[idx];
+                if (neighborUnit.CurrentGroup == unit.CurrentGroup && neighborUnit.SidePreference != 0)
+                {
+                    avgDir += neighborUnit.PreferredDir;
+                    count++;
+                }
+            }
+
+            if (count > 0)
+            {
+                avgDir /= count;
+                unit.PreferredDir = math.normalizesafe(avgDir);
+            }
+
+            Debug.DrawRay(unit.Position, avgDir * 5, Color.blue);
+
             unit.SidePreference = 0;
         }
 
@@ -502,7 +524,7 @@ public struct PhysicsJob : IJob
             }
 
             var relativeTargetDir = neighbor.TargetPosition - unit.TargetPosition;
-            if (math.lengthsq(relativeTargetDir) < 4)
+            if (math.lengthsq(relativeTargetDir) < 1.25f * 1.25f)
             {
                 if (!neighbor.Resolved)
                 {
