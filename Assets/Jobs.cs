@@ -30,9 +30,21 @@ public struct PhysicsJob : IJob
             var sqrDst = math.lengthsq(neighbor.Position - unit.Position);
             var radius = MovingNeighborRadius + unit.Radius + neighbor.Radius;
 
-            if (avoidanceType != AvoidanceType.Stationary && sqrDst > radius * radius)
+            if (avoidanceType != AvoidanceType.Stationary)
             {
-                continue;
+                if (sqrDst > radius * radius)
+                {
+                    continue;
+                }
+                else
+                {
+                    var neighborVelocityNorm = math.normalizesafe(neighbor.Velocity);
+                    var unitVelocityNorm = math.normalizesafe(unit.Velocity);
+                    if (math.dot(neighborVelocityNorm, unitVelocityNorm) > -0.1)
+                    {
+                        continue;
+                    }
+                }
             }
 
             if (!ValidTargetPositionConstraint(unit, neighbor))
