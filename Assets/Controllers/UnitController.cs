@@ -36,6 +36,10 @@ public struct Config
     public float PushDuration;
 
     public bool HoldingPosition;
+
+    public float FlockWeight;
+    public float LateralWeight;
+    public float SeparationWeight;
 }
 
 [System.Serializable]
@@ -54,6 +58,10 @@ public struct MovementComponent
     public bool Resolved;
     public bool HoldingPosition;
     public int SidePreference; // Side preference key: -1 -> left / 0 -> none / 1 -> right
+
+    public float FlockWeight;
+    public float LateralWeight;
+    public float SeparationWeight;
 
     // Pushing
     public float PushDuration;
@@ -112,6 +120,11 @@ public struct MovementComponent
         Orientation = 0;
 
         PreferredDir = float3.zero;
+
+        FlockWeight = unitController.Config.FlockWeight;
+        LateralWeight = unitController.Config.LateralWeight;
+        SeparationWeight = unitController.Config.SeparationWeight;
+
 
         CurrentGroup = -1;
     }
