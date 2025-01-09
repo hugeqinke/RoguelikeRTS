@@ -40,6 +40,7 @@ public struct Config
     public float FlockWeight;
     public float LateralWeight;
     public float SeparationWeight;
+    public float OtherSeparationWeight;
 }
 
 [System.Serializable]
@@ -62,6 +63,7 @@ public struct MovementComponent
     public float FlockWeight;
     public float LateralWeight;
     public float SeparationWeight;
+    public float OtherSeparationWeight;
 
     // Pushing
     public float PushDuration;
@@ -124,7 +126,7 @@ public struct MovementComponent
         FlockWeight = unitController.Config.FlockWeight;
         LateralWeight = unitController.Config.LateralWeight;
         SeparationWeight = unitController.Config.SeparationWeight;
-
+        OtherSeparationWeight = unitController.Config.OtherSeparationWeight;
 
         CurrentGroup = -1;
     }

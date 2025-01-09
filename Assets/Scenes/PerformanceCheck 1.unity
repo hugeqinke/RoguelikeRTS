@@ -196,10 +196,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -292,10 +288,6 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
@@ -392,10 +384,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -488,10 +476,6 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
@@ -678,10 +662,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -774,10 +754,6 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
@@ -874,10 +850,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -970,10 +942,6 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
@@ -1222,10 +1190,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -1382,10 +1346,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -1480,10 +1440,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -1576,10 +1532,6 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
@@ -1770,10 +1722,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -1866,10 +1814,6 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
@@ -2204,10 +2148,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -2302,10 +2242,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -2398,10 +2334,6 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
@@ -2580,10 +2512,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -2676,10 +2604,6 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
@@ -2846,10 +2770,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -3012,10 +2932,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -3108,10 +3024,6 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
@@ -3415,10 +3327,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -3511,10 +3419,6 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
@@ -3611,10 +3515,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -3707,10 +3607,6 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
@@ -3889,10 +3785,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -3985,10 +3877,6 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
@@ -4085,10 +3973,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
       value: 0.25
       objectReference: {fileID: 0}
@@ -4181,10 +4065,6 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
-      propertyPath: Config.SeparationWeight
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight

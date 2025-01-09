@@ -180,6 +180,9 @@ public struct PhysicsJob : IJob
             var separationDir = float3.zero;
             var separationCount = 0;
 
+            var otherSeparationDir = float3.zero;
+            var otherSeparationCount = 0;
+
 
             foreach (var idx in neighborIndexes)
             {
@@ -190,7 +193,7 @@ public struct PhysicsJob : IJob
 
                 var neighborUnit = Units[idx];
 
-                if (neighborUnit.CurrentGroup == unit.CurrentGroup)
+                if (!neighborUnit.Resolved && neighborUnit.CurrentGroup == unit.CurrentGroup)
                 {
                     // This 0.01 value MUST be smaller than whatever I set as a stop threshold
                     // in CheckUnitStop, otherwise unit WILL NOT stop
@@ -208,6 +211,13 @@ public struct PhysicsJob : IJob
                         separationCount++;
                     }
                 }
+                else if (!neighborUnit.Resolved && neighborUnit.CurrentGroup != unit.CurrentGroup)
+                {
+                    var relative = unit.Position - neighborUnit.Position;
+                    otherSeparationDir += math.normalizesafe(relative);
+                    otherSeparationCount++;
+
+                }
             }
 
             var newDir = unit.PreferredDir;
@@ -221,6 +231,12 @@ public struct PhysicsJob : IJob
                 {
                     separationDir /= separationCount;
                     newDir += unit.SeparationWeight * separationDir;
+                }
+
+                if (otherSeparationCount > 0)
+                {
+                    otherSeparationDir /= otherSeparationCount;
+                    newDir += unit.OtherSeparationWeight * otherSeparationDir;
                 }
             }
             else
