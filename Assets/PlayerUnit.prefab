@@ -241,6 +241,7 @@ MonoBehaviour:
     Resolved: 0
     HoldingPosition: 0
     SidePreference: 0
+    LastMoveTime: 0
     FlockRadius: 0
     FlockWeight: 0
     LateralWeight: 0
@@ -281,7 +282,8 @@ MonoBehaviour:
       y: 0
       z: 0
     CurrentGroup: 0
-  DBG_Orientation: 0
+    DBG: 0
+  DBG: 0
 --- !u!114 &5492515113754354241
 MonoBehaviour:
   m_ObjectHideFlags: 0

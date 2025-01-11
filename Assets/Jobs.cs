@@ -81,7 +81,7 @@ public struct PhysicsJob : IJob
             {
                 Debug.Log(angle);
             }
-            obb = new MathUtil.OBB(center, math.length(rel), 2 * (unit.Radius - unit.Radius * 0.5f), angle);
+            obb = new MathUtil.OBB(center, math.length(rel), 2 * (unit.Radius - unit.Radius * 0.25f), angle);
 
             if (unit.DBG)
             {
