@@ -25,7 +25,29 @@ public struct CombatJob : IJob
         {
             Retarget(i, combatNeighbors.GetValuesForKey(i));
             ProcessCombat(i, neighbors);
+
+            UpdateTargetPositions(i);
         }
+    }
+
+    private void UpdateTargetPositions(int i)
+    {
+        var unit = Units[i];
+
+        if (unit.Target != -1)
+        {
+            var target = Units[unit.Target];
+
+            unit.TargetPosition = target.Position;
+            unit.StopPosition = target.Position;
+            unit.MoveStartPosition = unit.Position;
+            if (!unit.Attacking)
+            {
+                unit.Resolved = false;
+            }
+        }
+
+        Units[i] = unit;
     }
 
     private void Retarget(int i, NativeMultiHashMap<int, int>.Enumerator neighborIndexes)
@@ -33,10 +55,56 @@ public struct CombatJob : IJob
         var unit = Units[i];
         var targetIdx = unit.Target;
 
-        if (targetIdx != -1)
+        if (unit.Attacking
+            || (targetIdx == -1 && math.lengthsq(unit.Position - unit.TargetPosition) > math.EPSILON))
         {
-            var targetUnit = Units[targetIdx];
-            var sqrDst = math.distancesq(targetUnit.Position, unit.Position);
+            return;
+        }
+
+        if (unit.HoldingPosition)
+        {
+            var nearSqrDst = math.INFINITY;
+            if (targetIdx != -1)
+            {
+                var targetUnit = Units[targetIdx];
+                nearSqrDst = math.distancesq(targetUnit.Position, unit.Position);
+            }
+
+            var nearTargetIdx = -1;
+
+            foreach (var neighborIdx in neighborIndexes)
+            {
+                var neighbor = Units[neighborIdx];
+                if (neighbor.Owner == unit.Owner)
+                {
+                    continue;
+                }
+
+                var neighborSqrDst = math.distancesq(neighbor.Position, unit.Position);
+                var threshold = neighbor.Radius + unit.Radius + unit.AttackRadius;
+                if (neighborSqrDst < threshold * threshold)
+                {
+                    if (neighborSqrDst < nearSqrDst)
+                    {
+                        nearTargetIdx = neighborIdx;
+                        nearSqrDst = neighborSqrDst;
+                    }
+                }
+            }
+
+            if (nearTargetIdx != -1)
+            {
+                unit.Target = nearTargetIdx;
+            }
+        }
+        else
+        {
+            var sqrDst = math.INFINITY;
+            if (targetIdx != -1)
+            {
+                var targetUnit = Units[targetIdx];
+                sqrDst = math.distancesq(targetUnit.Position, unit.Position);
+            }
 
             var nearTargetIdx = -1;
 
@@ -60,10 +128,19 @@ public struct CombatJob : IJob
             if (nearTargetIdx != -1)
             {
                 unit.Target = nearTargetIdx;
-            }
 
-            Units[i] = unit;
+                var position = Units[unit.Target].Position;
+
+                unit.TargetPosition = position;
+                unit.StopPosition = position;
+                unit.MoveStartPosition = unit.Position;
+                unit.Resolved = false;
+            }
         }
+
+
+
+        Units[i] = unit;
     }
 
     private void ProcessCombat(int i, NativeMultiHashMap<int, int> neighbors)

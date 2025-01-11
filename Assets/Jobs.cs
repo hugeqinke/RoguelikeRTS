@@ -396,8 +396,9 @@ public struct PhysicsJob : IJob
                 }
                 else
                 {
+                    unit.PreferredDir = math.normalizesafe(target.Position - unit.Position);
                     unit = CalculatePreferredDirection(i, unit, neighbors.GetValuesForKey(i));
-                    var neighbor = Units[unit.Target];
+                    // var neighbor = Units[unit.Target];
                     // Debug.DrawLine(unit.Position, neighbor.Position, Color.red);
                 }
             }
