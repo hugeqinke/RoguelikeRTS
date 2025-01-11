@@ -224,12 +224,14 @@ MonoBehaviour:
     Mass: 1
     MaxAcceleration: 1000
     TimeHorizon: 0.25
-    PushDuration: 0
     HoldingPosition: 0
-    FlockWeight: 1
+    FlockRadius: 2
+    FlockWeight: 1.25
     LateralWeight: 1
     SeparationWeight: 0.25
-    OtherSeparationWeight: 1
+    OtherSeparationWeight: 0.5
+    AttackRadius: 0.1
+    AttackSpeed: 0
   DBG_Movement:
     Owner: 0
     Radius: 0
@@ -239,16 +241,15 @@ MonoBehaviour:
     Resolved: 0
     HoldingPosition: 0
     SidePreference: 0
+    FlockRadius: 0
     FlockWeight: 0
     LateralWeight: 0
     SeparationWeight: 0
     OtherSeparationWeight: 0
-    PushDuration: 0
-    LastPushTime: 0
-    ResetTargetPositionDuration: 0
-    ResetTargetPositionElapsed: 0
     Target: 0
     Attacking: 0
+    AttackRadius: 0
+    AttackSpeed: 0
     Mass: 0
     Velocity:
       x: 0

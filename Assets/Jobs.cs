@@ -14,9 +14,116 @@ public struct PhysicsJob : IJob
     public float MovingNeighborRadius;
     public int Substeps;
     public float DeltaTime;
+    public float CurrentTime;
     public float RotateAmount;
+    public float CombatClearRange;
 
-    private int ChooseNeighbor(MovementComponent unit, NativeMultiHashMap<int, int>.Enumerator neighborIndexes)
+    public bool ProhibitNeighborChoice(
+            MovementComponent unit,
+            MovementComponent neighbor,
+            int neighborIdx,
+            int avoidancePriority,
+            float sqrDst,
+            AvoidanceType avoidanceType)
+    {
+        var radius = MovingNeighborRadius + unit.Radius + neighbor.Radius;
+
+        if (avoidanceType != AvoidanceType.Stationary)
+        {
+            if (sqrDst > radius * radius)
+            {
+                return true;
+            }
+            else
+            {
+                var neighborVelocityNorm = math.normalizesafe(neighbor.Velocity);
+                var unitVelocityNorm = math.normalizesafe(unit.Velocity);
+                if (math.dot(neighborVelocityNorm, unitVelocityNorm) > -0.1)
+                {
+                    return true;
+                }
+            }
+        }
+
+        if (!ValidTargetPositionConstraint(unit, neighbor))
+        {
+            return true;
+        }
+
+        if (unit.Owner == neighbor.Owner && !ResolveFriendConstraints(unit, neighbor, avoidancePriority))
+        {
+            return true;
+        }
+
+        if (unit.Owner != neighbor.Owner && !ResolveEnemyConstraints(unit, neighborIdx))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool ClearPath(
+            MovementComponent unit,
+            int unitIdx,
+            NativeMultiHashMap<int, int>.Enumerator neighborIndexes)
+    {
+        var clearPath = true;
+        MathUtil.OBB obb;
+        if (unit.Target != -1)
+        {
+            var targetUnit = Units[unit.Target];
+            var center = (targetUnit.Position + unit.Position) * 0.5f;
+            var rel = targetUnit.Position - unit.Position;
+
+            var angle = signedangle(math.right(), rel, math.up());
+            if (unit.DBG)
+            {
+                Debug.Log(angle);
+            }
+            obb = new MathUtil.OBB(center, math.length(rel), 2 * (unit.Radius - unit.Radius * 0.5f), angle);
+
+            if (unit.DBG)
+            {
+                var a = obb.Position - obb.Extents.x * obb.XAxis - obb.Extents.z * obb.ZAxis + new float3(0, 1, 0);
+                var b = obb.Position - obb.Extents.x * obb.XAxis + obb.Extents.z * obb.ZAxis + new float3(0, 1, 0);
+                var c = obb.Position + obb.Extents.x * obb.XAxis + obb.Extents.z * obb.ZAxis + new float3(0, 1, 0);
+                var d = obb.Position + obb.Extents.x * obb.XAxis - obb.Extents.z * obb.ZAxis + new float3(0, 1, 0);
+
+                Debug.DrawLine(a, b, Color.magenta);
+                Debug.DrawLine(b, c, Color.magenta);
+                Debug.DrawLine(c, d, Color.magenta);
+                Debug.DrawLine(d, a, Color.magenta);
+            }
+
+            foreach (var neighborIdx in neighborIndexes)
+            {
+                // Check if neighbor has a clear path
+                if (neighborIdx != unit.Target && neighborIdx != unitIdx)
+                {
+                    var neighbor = Units[neighborIdx];
+                    var circle = new MathUtil.Circle(neighbor.Position, neighbor.Radius);
+                    if (MathUtil.OverlapCircleOBB(circle, obb))
+                    {
+                        clearPath = false;
+
+                        if (unit.DBG)
+                        {
+                            /* Debug.DrawLine(
+                                unit.Position + new float3(0, 1.5f, 0),
+                                neighbor.Position + new float3(0, 1.5f, 0),
+                                Color.magenta); */
+                        }
+                        // return false;
+                    }
+                }
+            }
+        }
+
+        return clearPath;
+    }
+
+    private int ChooseNeighbor(MovementComponent unit, int unitIdx, NativeMultiHashMap<int, int>.Enumerator neighborIndexes)
     {
         int nearNeighbor = -1;
         var nearSqrDst = math.INFINITY;
@@ -25,48 +132,25 @@ public struct PhysicsJob : IJob
         foreach (var neighborIdx in neighborIndexes)
         {
             var neighbor = Units[neighborIdx];
+
             var avoidanceType = GetAvoidanceType(neighbor);
-
             var sqrDst = math.lengthsq(neighbor.Position - unit.Position);
-            var radius = MovingNeighborRadius + unit.Radius + neighbor.Radius;
 
-            if (avoidanceType != AvoidanceType.Stationary)
+            // Decide any avoid neighbors
+            if (!ProhibitNeighborChoice(
+                    unit,
+                    neighbor,
+                    neighborIdx,
+                    avoidancePriority,
+                    sqrDst,
+                    avoidanceType))
             {
-                if (sqrDst > radius * radius)
+                if (sqrDst < nearSqrDst)
                 {
-                    continue;
+                    nearSqrDst = sqrDst;
+                    nearNeighbor = neighborIdx;
+                    avoidancePriority = (int)avoidanceType;
                 }
-                else
-                {
-                    var neighborVelocityNorm = math.normalizesafe(neighbor.Velocity);
-                    var unitVelocityNorm = math.normalizesafe(unit.Velocity);
-                    if (math.dot(neighborVelocityNorm, unitVelocityNorm) > -0.1)
-                    {
-                        continue;
-                    }
-                }
-            }
-
-            if (!ValidTargetPositionConstraint(unit, neighbor))
-            {
-                continue;
-            }
-
-            if (unit.Owner == neighbor.Owner && !ResolveFriendConstraints(unit, neighbor, avoidancePriority))
-            {
-                continue;
-            }
-
-            if (unit.Owner != neighbor.Owner && !ResolveEnemyConstraints(unit, neighborIdx))
-            {
-                continue;
-            }
-
-            if (sqrDst < nearSqrDst)
-            {
-                nearSqrDst = sqrDst;
-                nearNeighbor = neighborIdx;
-                avoidancePriority = (int)avoidanceType;
             }
         }
 
@@ -81,9 +165,7 @@ public struct PhysicsJob : IJob
         var dir = unit.TargetPosition - unit.Position;
         unit.PreferredDir = math.normalizesafe(dir);
 
-        var neighborIdx = ChooseNeighbor(unit, neighborIndexes);
-
-
+        var neighborIdx = ChooseNeighbor(unit, unitIdx, neighborIndexes);
         if (neighborIdx != -1)
         {
             var neighbor = Units[neighborIdx];
@@ -210,8 +292,16 @@ public struct PhysicsJob : IJob
                     // This 0.01 value MUST be smaller than whatever I set as a stop threshold
                     // in CheckUnitStop, otherwise unit WILL NOT stop
                     // TODO: maybe make this apparent in the editor
-                    avgDir += neighborUnit.PreferredDir;
-                    count++;
+
+                    var relativeDir = neighborUnit.Position - unit.Position;
+                    var threshold = neighborUnit.Radius + unit.Radius + unit.FlockRadius;
+
+                    if (math.dot(neighborUnit.Velocity, unit.Velocity) >= 0
+                            && math.lengthsq(relativeDir) <= threshold * threshold)
+                    {
+                        avgDir += neighborUnit.PreferredDir;
+                        count++;
+                    }
 
                     if (neighborUnit.SidePreference != 0)
                     {
@@ -228,7 +318,6 @@ public struct PhysicsJob : IJob
                     var relative = unit.Position - neighborUnit.Position;
                     otherSeparationDir += math.normalizesafe(relative);
                     otherSeparationCount++;
-
                 }
             }
 
@@ -270,9 +359,17 @@ public struct PhysicsJob : IJob
         return unit;
     }
 
+    public bool IsMovable(MovementComponent unit)
+    {
+        return !unit.Attacking && !unit.HoldingPosition;
+    }
+
     public void Execute()
     {
-        var neighbors = BroadPhase();
+        var neighbors = UtilityFunctions.BroadPhase(Units, SpatialHashMap, SpatialHashMeta);
+
+        var cellRange = UtilityFunctions.RangeToCellCount(CombatClearRange, SpatialHashMeta);
+        var combatNeighbors = UtilityFunctions.BroadPhase(Units, SpatialHashMap, SpatialHashMeta, cellRange);
 
         // Pre-physics updates
         for (int i = 0; i < Units.Length; i++)
@@ -281,8 +378,37 @@ public struct PhysicsJob : IJob
             // in low velocities for too long
             var unit = Units[i];
 
+            if (math.lengthsq(unit.Velocity) > math.EPSILON)
+            {
+                unit.LastMoveTime = CurrentTime;
+            }
+
             // Set preferred velocites - used to calculate where units should be
-            if (!unit.Resolved)
+            if (!unit.Resolved && unit.Target != -1 && unit.Attacking)
+            {
+                unit.PreferredDir = float3.zero;
+                unit.SidePreference = 0;
+            }
+            else if (!unit.Resolved && unit.Target != -1 && !unit.Attacking)
+            {
+                var target = Units[unit.Target];
+                var targetSqDst = math.distancesq(target.Position, unit.Position);
+
+                // if (targetSqDst < CombatClearRange * CombatClearRange
+                // && ClearPath(unit, i, combatNeighbors.GetValuesForKey(i)))
+                if (ClearPath(unit, i, combatNeighbors.GetValuesForKey(i)))
+                {
+                    unit.PreferredDir = math.normalizesafe(target.Position - unit.Position);
+                    Debug.DrawLine(unit.Position, target.Position, Color.green);
+                }
+                else
+                {
+                    unit = CalculatePreferredDirection(i, unit, neighbors.GetValuesForKey(i));
+                    var neighbor = Units[unit.Target];
+                    Debug.DrawLine(unit.Position, neighbor.Position, Color.red);
+                }
+            }
+            else if (!unit.Resolved && unit.Target == -1)
             {
                 unit = CalculatePreferredDirection(i, unit, neighbors.GetValuesForKey(i));
             }
@@ -307,7 +433,7 @@ public struct PhysicsJob : IJob
             Units[i] = unit;
         }
 
-        // Resolve physics
+        // Apply physics
         var sdt = DeltaTime / Substeps;
 
         for (int substep = 0; substep < Substeps; substep++)
@@ -338,53 +464,7 @@ public struct PhysicsJob : IJob
                 Units[i] = unit;
             }
 
-            for (int i = 0; i < Units.Length; i++)
-            {
-                var unit = Units[i];
-
-                var neighborIndices = neighbors.GetValuesForKey(i);
-
-                foreach (var neighborIdx in neighborIndices)
-                {
-                    var body1 = Units[i];
-                    var body2 = Units[neighborIdx];
-
-                    var body1EffectiveMass = body1.Mass;
-                    var body2EffectiveMass = body2.Mass;
-
-                    if (body1.HoldingPosition && !body2.HoldingPosition)
-                    {
-                        body1EffectiveMass = 1;
-                        body2EffectiveMass = 0;
-                    }
-                    else if (!body1.HoldingPosition && body2.HoldingPosition)
-                    {
-                        body1EffectiveMass = 0;
-                        body2EffectiveMass = 1;
-                    }
-
-                    var dir = body2.Position - body1.Position;
-                    var separation = math.length(dir);
-
-                    var collideRadius = body1.Radius + body2.Radius;
-
-                    if (separation < collideRadius)
-                    {
-                        var totalMass = body1EffectiveMass + body2EffectiveMass;
-
-                        var slop = collideRadius - separation;
-
-                        var x1 = -body2EffectiveMass / totalMass * slop * math.normalizesafe(dir);
-                        var x2 = body1EffectiveMass / totalMass * slop * math.normalizesafe(dir);
-
-                        body1.Position += x1;
-                        body2.Position += x2;
-
-                        Units[i] = body1;
-                        Units[neighborIdx] = body2;
-                    }
-                }
-            }
+            ResolveCollisions(neighbors);
 
             // end position constraint
             for (int i = 0; i < Units.Length; i++)
@@ -429,6 +509,104 @@ public struct PhysicsJob : IJob
 
         // Post
         CheckStop(neighbors);
+    }
+
+    private void ResolveCollisions(NativeMultiHashMap<int, int> neighbors)
+    {
+        for (int i = 0; i < Units.Length; i++)
+        {
+            var unit = Units[i];
+
+            var neighborIndices = neighbors.GetValuesForKey(i);
+
+            foreach (var neighborIdx in neighborIndices)
+            {
+                var body1 = Units[i];
+                var body2 = Units[neighborIdx];
+
+                var body1EffectiveMass = body1.Mass;
+                var body2EffectiveMass = body2.Mass;
+
+                if (body1.Owner == body2.Owner)
+                {
+                    var body1Movable = IsMovable(body1);
+                    var body2Movable = IsMovable(body2);
+
+                    if (body1Movable && !body2Movable)
+                    {
+                        body1EffectiveMass = 0;
+                        body2EffectiveMass = 1;
+                    }
+                    else if (!body1Movable && body2Movable)
+                    {
+                        body1EffectiveMass = 1;
+                        body2EffectiveMass = 0;
+                    }
+                    else
+                    {
+                        if (body1.LastMoveTime > body2.LastMoveTime)
+                        {
+                            body1EffectiveMass = 0;
+                            body2EffectiveMass = 1;
+                        }
+                        else if (body2.LastMoveTime > body1.LastMoveTime)
+                        {
+                            body1EffectiveMass = 1;
+                            body2EffectiveMass = 0;
+                        }
+                    }
+                }
+                else
+                {
+                    if (math.abs(math.lengthsq(body2.Velocity) - math.lengthsq(body1.Velocity)) < math.EPSILON)
+                    {
+                        if (body1.LastMoveTime > body2.LastMoveTime)
+                        {
+                            body1EffectiveMass = 0;
+                            body2EffectiveMass = 1;
+                        }
+                        else if (body1.LastMoveTime < body2.LastMoveTime)
+                        {
+                            body1EffectiveMass = 1;
+                            body2EffectiveMass = 0;
+                        }
+                    }
+                    if (math.lengthsq(body1.Velocity) < math.lengthsq(body2.Velocity))
+                    {
+                        body1EffectiveMass = 1;
+                        body2EffectiveMass = 0;
+                    }
+                    else
+                    {
+                        body1EffectiveMass = 0;
+                        body2EffectiveMass = 1;
+                    }
+                }
+
+
+                var dir = body2.Position - body1.Position;
+                var separation = math.length(dir);
+
+                var collideRadius = body1.Radius + body2.Radius;
+
+                if (separation < collideRadius)
+                {
+                    var totalMass = body1EffectiveMass + body2EffectiveMass;
+
+                    var slop = collideRadius - separation;
+
+                    var x1 = -body2EffectiveMass / totalMass * slop * math.normalizesafe(dir);
+                    var x2 = body1EffectiveMass / totalMass * slop * math.normalizesafe(dir);
+
+                    body1.Position += x1;
+                    body2.Position += x2;
+
+                    Units[i] = body1;
+                    Units[neighborIdx] = body2;
+                }
+            }
+        }
+
     }
 
     private int ChooseSign(MovementComponent unit, MovementComponent neighbor, out float3 target)
@@ -635,14 +813,29 @@ public struct PhysicsJob : IJob
             var unit = Units[i];
             if (!unit.Resolved)
             {
-                if (CheckUnitStop(i, neighbors))
+                if (unit.Target == -1)
                 {
-                    unit.Velocity = Vector3.zero;
-                    unit.Resolved = true;
-                    unit.StopPosition = unit.Position;
-                    Units[i] = unit;
+                    if (CheckUnitStop(i, neighbors))
+                    {
+                        unit.Velocity = Vector3.zero;
+                        unit.Resolved = true;
+                        unit.StopPosition = unit.Position;
+                    }
+                }
+                else
+                {
+                    if (unit.Attacking)
+                    {
+                        unit.Resolved = true;
+                    }
+                    else
+                    {
+                        unit.Resolved = false;
+                    }
                 }
             }
+
+            Units[i] = unit;
         }
     }
 
@@ -651,6 +844,19 @@ public struct PhysicsJob : IJob
         float angle = math.acos(math.dot(math.normalize(from), math.normalize(to)));
         float sign = math.sign(math.dot(axis, math.cross(from, to)));
         return math.degrees(angle * sign);
+    }
+
+    private bool ProhibitPush(int unitIdx, int neighborIdx)
+    {
+        var unit = Units[unitIdx];
+        var neighbor = Units[neighborIdx];
+
+        var inPushRadius = InPushRadius(unit, neighbor);
+
+        return unitIdx == neighborIdx
+            || neighbor.Owner != unit.Owner
+            || unit.Attacking
+            || !inPushRadius;
     }
 
     private float3 CalculatePush(int unitIdx, NativeMultiHashMap<int, int> neighbors)
@@ -668,47 +874,44 @@ public struct PhysicsJob : IJob
         var neighborIndexes = neighbors.GetValuesForKey(unitIdx);
         foreach (var neighborIdx in neighborIndexes)
         {
-            if (neighborIdx == unitIdx)
+            if (ProhibitPush(unitIdx, neighborIdx))
             {
                 continue;
             }
 
             var neighbor = Units[neighborIdx];
 
-            if (InPushRadius(unit, neighbor))
+            // Calculate how much an "inactive" unit should be pushed
+            var relDir = unit.Position - neighbor.Position;
+
+            var velocity = neighbor.Velocity;
+
+            if (!neighbor.Resolved)
             {
-                // Calculate how much an "inactive" unit should be pushed
-                var relDir = unit.Position - neighbor.Position;
+                var angle = signedangle(velocity, relDir, Vector3.up);
+                var angleSign = math.sign(angle);
+                var rotateRadius = math.radians(angleSign * 90);
 
-                var velocity = neighbor.Velocity;
+                var rotation = quaternion.Euler(0, rotateRadius, 0);
+                var perpVelocity = math.mul(rotation, velocity);
 
-                if (!neighbor.Resolved)
+                // Add a lower bound so that turn rate is faster
+                var t = math.max(math.smoothstep(0, 90, math.abs(angle)), 0.4f);
+                var perpIntensity = math.lerp(0, 1, t);
+                var forwardIntensity = 1 - perpIntensity;
+                // appliedVelocity = perpIntensity * perpVelocity + forwardIntensity * velocity;
+                var appliedVelocity = perpIntensity * perpVelocity + velocity;
+                calculatedVelocity += appliedVelocity;
+                count++;
+            }
+            else
+            {
+                if (math.lengthsq(neighbor.Velocity) > 0)
                 {
-                    var angle = signedangle(velocity, relDir, Vector3.up);
-                    var angleSign = math.sign(angle);
-                    var rotateRadius = math.radians(angleSign * 90);
-
-                    var rotation = quaternion.Euler(0, rotateRadius, 0);
-                    var perpVelocity = math.mul(rotation, velocity);
-
-                    // Add a lower bound so that turn rate is faster
-                    var t = math.max(math.smoothstep(0, 90, math.abs(angle)), 0.4f);
-                    var perpIntensity = math.lerp(0, 1, t);
-                    var forwardIntensity = 1 - perpIntensity;
-                    // appliedVelocity = perpIntensity * perpVelocity + forwardIntensity * velocity;
-                    var appliedVelocity = perpIntensity * perpVelocity + velocity;
-                    calculatedVelocity += appliedVelocity;
-                    count++;
-                }
-                else
-                {
-                    if (math.lengthsq(neighbor.Velocity) > 0)
-                    {
-                        var rel = unit.Position - neighbor.Position;
-                        var appliedVelocity = math.normalizesafe(rel) * unit.MaxSpeed;
-                        resolvedVelocity += appliedVelocity;
-                        resolvedCnt++;
-                    }
+                    var rel = unit.Position - neighbor.Position;
+                    var appliedVelocity = math.normalizesafe(rel) * unit.MaxSpeed;
+                    resolvedVelocity += appliedVelocity;
+                    resolvedCnt++;
                 }
             }
         }
@@ -739,58 +942,31 @@ public struct PhysicsJob : IJob
 
         return dist < Mathf.Epsilon && Vector3.Dot(relativeDir, neighbor.Velocity) > 0;
     }
+}
 
-
-    private Cell ComputeCell(SpatialHashMeta meta, int idx)
+public struct UtilityFunctions
+{
+    public static NativeMultiHashMap<int, int> BroadPhase(
+            NativeArray<MovementComponent> units,
+            NativeMultiHashMap<int, int> spatialHashMap,
+            SpatialHashMeta spatialHashMeta,
+            int customCellRange = -1)
     {
-        var position = Units[idx].Position;
-        var rel = position - meta.Origin;
-        var row = (int)math.floor(rel.z / meta.Size);
-        var column = (int)math.floor(rel.x / meta.Size);
-
-        return new Cell()
+        var neighbors = new NativeMultiHashMap<int, int>(units.Length * 15, Allocator.Temp);
+        for (int unitIdx = 0; unitIdx < units.Length; unitIdx++)
         {
-            Row = row,
-            Column = column
-        };
-    }
-
-    private int ComputeSpatialHash(SpatialHashMeta meta, Cell cell)
-    {
-        var hash = cell.Row * meta.Columns + cell.Column;
-        return hash;
-    }
-
-    private int GetCellRange(MovementComponent unit, Cell cell)
-    {
-        var range = unit.Radius + unit.MaxSpeed * unit.TimeHorizon;
-
-        var val = range / SpatialHashMeta.Size;
-        var cnt = (int)val;
-        if (cnt < val)
-        {
-            cnt++;
-        }
-
-        return cnt;
-    }
-
-    private NativeMultiHashMap<int, int> BroadPhase()
-    {
-        var neighbors = new NativeMultiHashMap<int, int>(Units.Length * 15, Allocator.Temp);
-        for (int unitIdx = 0; unitIdx < Units.Length; unitIdx++)
-        {
-            var unit = Units[unitIdx];
-            var cell = ComputeCell(SpatialHashMeta, unitIdx);
+            var unit = units[unitIdx];
+            var cell = ComputeCell(unit, spatialHashMeta);
 
             int cellRange;
-            if (unit.Resolved)
+
+            if (customCellRange != -1)
             {
-                cellRange = 1;
+                cellRange = customCellRange;
             }
             else
             {
-                cellRange = GetCellRange(unit, cell);
+                cellRange = ComputeCellRange(unit, cell, spatialHashMeta);
             }
 
             var minRow = cell.Row - cellRange;
@@ -805,23 +981,23 @@ public struct PhysicsJob : IJob
                 {
                     var neighborCell = new Cell(minRow + row, minCol + col);
                     if (neighborCell.Row >= 0
-                        && neighborCell.Row < SpatialHashMeta.Rows
+                        && neighborCell.Row < spatialHashMeta.Rows
                         && neighborCell.Column >= 0
-                        && neighborCell.Column < SpatialHashMeta.Columns)
+                        && neighborCell.Column < spatialHashMeta.Columns)
                     {
-                        hashes.Add(ComputeSpatialHash(SpatialHashMeta, neighborCell));
+                        hashes.Add(ComputeSpatialHash(neighborCell, spatialHashMeta));
                     }
                 }
             }
 
             foreach (var hash in hashes)
             {
-                if (!SpatialHashMap.ContainsKey(hash))
+                if (!spatialHashMap.ContainsKey(hash))
                 {
                     continue;
                 }
 
-                var neighborIndices = SpatialHashMap.GetValuesForKey(hash);
+                var neighborIndices = spatialHashMap.GetValuesForKey(hash);
                 foreach (var neighborIdx in neighborIndices)
                 {
                     if (neighborIdx != unitIdx)
@@ -834,4 +1010,54 @@ public struct PhysicsJob : IJob
 
         return neighbors;
     }
+
+    private static Cell ComputeCell(MovementComponent unit, SpatialHashMeta meta)
+    {
+        var position = unit.Position;
+        var rel = position - meta.Origin;
+        var row = (int)math.floor(rel.z / meta.Size);
+        var column = (int)math.floor(rel.x / meta.Size);
+
+        return new Cell()
+        {
+            Row = row,
+            Column = column
+        };
+    }
+
+    public static int RangeToCellCount(float range, SpatialHashMeta meta)
+    {
+        var val = range / meta.Size;
+
+        var cnt = (int)val;
+        if (cnt < val)
+        {
+            cnt++;
+        }
+
+        return cnt;
+    }
+
+    private static int ComputeCellRange(MovementComponent unit, Cell cell, SpatialHashMeta meta)
+    {
+        if (unit.Resolved)
+        {
+            return 1;
+        }
+
+        var range = unit.Radius + unit.MaxSpeed * unit.TimeHorizon;
+        return RangeToCellCount(range, meta);
+    }
+
+    private static int ComputeSpatialHash(Cell cell, SpatialHashMeta meta)
+    {
+        var hash = cell.Row * meta.Columns + cell.Column;
+        return hash;
+    }
+}
+
+public struct ChooseNeighborResult
+{
+    public int ResolveIndex;
+    public bool ClearPathToTarget;
 }

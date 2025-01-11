@@ -559,6 +559,56 @@ public static class InputUtils
 
 public static class MathUtil
 {
+    public struct OBB
+    {
+        public float3 Position;
+        public float3 Extents;
+        public float3 XAxis;
+        public float3 ZAxis;
+
+        public OBB(float3 center, float width, float height, float orientation)
+        {
+            Position = center;
+
+            var rads = math.radians(orientation);
+            XAxis = math.mul(quaternion.RotateY(rads), math.right());
+            ZAxis = math.mul(quaternion.RotateY(rads), math.forward());
+
+            Extents = new float3(width, 0, height) * 0.5f;
+        }
+    }
+
+    public struct Circle
+    {
+        public float3 Position;
+        public float Radius;
+
+        public Circle(float3 position, float radius)
+        {
+            Position = position;
+            Radius = radius;
+        }
+    }
+
+    public static bool OverlapCircleOBB(Circle circle, OBB obb)
+    {
+        var v = circle.Position - obb.Position;
+
+        var dx = math.dot(v, obb.XAxis);
+        if (dx < -obb.Extents.x - circle.Radius || dx > obb.Extents.x + circle.Radius)
+        {
+            return false;
+        }
+
+        var dz = math.dot(v, obb.ZAxis);
+        if (dz < -obb.Extents.z - circle.Radius || dz > obb.Extents.z + circle.Radius)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     public static float signedangle(float3 from, float3 to, float3 axis)
     {
         float angle = math.acos(math.dot(math.normalize(from), math.normalize(to)));

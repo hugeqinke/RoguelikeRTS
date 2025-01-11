@@ -17,7 +17,7 @@ public class UnitController : MonoBehaviour, IComponent
     public Config Config;
     public MovementComponent DBG_Movement;
 
-    public bool DBG_Orientation;
+    public bool DBG;
 }
 
 [System.Serializable]
@@ -33,48 +33,53 @@ public struct Config
     public float MaxAcceleration;
     public float TimeHorizon;
 
-    public float PushDuration;
-
     public bool HoldingPosition;
+
+    public float FlockRadius;
 
     public float FlockWeight;
     public float LateralWeight;
     public float SeparationWeight;
     public float OtherSeparationWeight;
+
+    public float AttackRadius;
+    public float AttackSpeed;
 }
 
 [System.Serializable]
 public struct MovementComponent
 {
+    [Header("Meta")]
     // Meta
     public Owner Owner;
     public float Radius;
 
+    [Header("Movement")]
     // Config
     public float MaxSpeed;
     public float Acceleration;
     public float TimeHorizon;
 
+    [Header("Misc States")]
     // State + Movement heuristics
     public bool Resolved;
     public bool HoldingPosition;
     public int SidePreference; // Side preference key: -1 -> left / 0 -> none / 1 -> right
+    public float LastMoveTime;
 
+    [Header("Steering")]
+    public float FlockRadius;
     public float FlockWeight;
     public float LateralWeight;
     public float SeparationWeight;
     public float OtherSeparationWeight;
 
-    // Pushing
-    public float PushDuration;
-    public float LastPushTime;
-
-    public float ResetTargetPositionDuration;
-    public float ResetTargetPositionElapsed;
-
+    [Header("Combat")]
     // Combat
     public int Target;
     public bool Attacking;
+    public float AttackRadius;
+    public float AttackSpeed;
 
     // Physics
     public float Mass;
@@ -89,6 +94,7 @@ public struct MovementComponent
     public float3 PreferredDir;
 
     public int CurrentGroup;
+    public bool DBG;
 
     public MovementComponent(UnitController unitController)
     {
@@ -98,19 +104,16 @@ public struct MovementComponent
         MaxSpeed = unitController.Config.MaxSpeed;
         Acceleration = unitController.Config.MaxAcceleration;
         TimeHorizon = unitController.Config.TimeHorizon;
+        LastMoveTime = Mathf.NegativeInfinity;
 
         Resolved = true;
         HoldingPosition = unitController.Config.HoldingPosition;
         SidePreference = 0;
 
-        PushDuration = unitController.Config.PushDuration;
-        LastPushTime = 0f;
-
-        ResetTargetPositionDuration = 0f;
-        ResetTargetPositionElapsed = 0f;
-
         Target = -1;
         Attacking = false;
+        AttackRadius = unitController.Config.AttackRadius;
+        AttackSpeed = unitController.Config.AttackSpeed;
 
         Mass = unitController.Config.Mass;
         Velocity = float3.zero;
@@ -123,12 +126,15 @@ public struct MovementComponent
 
         PreferredDir = float3.zero;
 
+        FlockRadius = unitController.Config.FlockRadius;
         FlockWeight = unitController.Config.FlockWeight;
         LateralWeight = unitController.Config.LateralWeight;
         SeparationWeight = unitController.Config.SeparationWeight;
         OtherSeparationWeight = unitController.Config.OtherSeparationWeight;
 
         CurrentGroup = -1;
+
+        DBG = unitController.DBG;
     }
 }
 
@@ -141,31 +147,6 @@ public struct Kinematic
     public Vector3 Velocity;
     public Vector3 Position;
     public float Orientation;
-}
-
-[System.Serializable]
-public class BasicMovement
-{
-    public Vector3 TargetPosition;
-    public float TargetOrientation;
-
-    public Vector3 RelativeDeltaStart;
-    public bool Resolved = true;
-    public bool HoldingPosition;
-    public float ReturnRadius;
-    public float LastPushedByFriendlyNeighborTime;
-    public float LastMoveTime = Mathf.NegativeInfinity; // Last TimeStep where velocity sqrDist was greater than zero
-    public bool DBG;
-
-    // Avoidance
-    public float TimeHorizon;
-
-    /* Side preference key:
-       -1 -> left
-        0 -> none
-        1 -> right        
-    */
-    public int SidePreference;
 }
 
 public enum Owner

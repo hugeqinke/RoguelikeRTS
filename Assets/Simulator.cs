@@ -19,7 +19,7 @@ public class Simulator : MonoBehaviour
     public float MovingNeighborRadius;
     private static float rotateAmount = 30f;
 
-    public float AlertRadius;
+    public float CombatClearRange;
 
 
     // Misc
@@ -36,15 +36,17 @@ public class Simulator : MonoBehaviour
     public List<MovementComponent> MovementComponents;
 
     // Physics
-    public bool DBGMediumHash;
     public SpatialHashConfig MediumSpatialHashConfig;
     private SpatialHashMeta _mediumSpatialHashMeta;
 
     public int Substeps;
 
+    public bool DBGMediumHash;
     public bool DBGTarget;
     public bool DBGResolvedState;
     public bool DBGForward;
+    public bool DBGAttack;
+
 
     private void Awake()
     {
@@ -154,6 +156,7 @@ public class Simulator : MonoBehaviour
             movementComponent.Velocity = float3.zero;
             movementComponent.Resolved = false;
             movementComponent.HoldingPosition = false;
+            movementComponent.Target = -1;
             MovementComponents[idx] = movementComponent;
         }
     }
@@ -204,6 +207,34 @@ public class Simulator : MonoBehaviour
             var unitController = UnitControllers[Units[i]];
             unitController.DBG_Movement = MovementComponents[i];
         }
+
+        var mediumSpatialHash = CreateSpatialHash(_mediumSpatialHashMeta);
+
+        var allocSize = Units.Count;
+        var movementComponents = new NativeArray<MovementComponent>(allocSize, Allocator.TempJob);
+        for (int i = 0; i < MovementComponents.Count; i++)
+        {
+            movementComponents[i] = MovementComponents[i];
+        }
+
+        var combatJob = new CombatJob()
+        {
+            Units = movementComponents,
+            SpatialHash = mediumSpatialHash,
+            Meta = _mediumSpatialHashMeta
+        };
+
+        var combatJobHandle = combatJob.Schedule();
+        // TODO: could move this to late update instead
+        combatJobHandle.Complete();
+
+        for (int i = 0; i < MovementComponents.Count; i++)
+        {
+            MovementComponents[i] = movementComponents[i];
+        }
+
+        movementComponents.Dispose();
+        mediumSpatialHash.Dispose();
     }
 
     private void FixedUpdate()
@@ -217,6 +248,9 @@ public class Simulator : MonoBehaviour
         var movementComponents = new NativeArray<MovementComponent>(allocSize, Allocator.TempJob);
         for (int i = 0; i < MovementComponents.Count; i++)
         {
+            var movementComponent = MovementComponents[i];
+            movementComponent.DBG = UnitControllers[Units[i]].DBG;
+            MovementComponents[i] = movementComponent;
             movementComponents[i] = MovementComponents[i];
         }
 
@@ -228,7 +262,9 @@ public class Simulator : MonoBehaviour
             MovingNeighborRadius = MovingNeighborRadius,
             Units = movementComponents,
             DeltaTime = Time.fixedDeltaTime,
+            CurrentTime = Time.fixedTime,
             RotateAmount = rotateAmount * Mathf.Deg2Rad,
+            CombatClearRange = CombatClearRange
         };
 
         var physicsJobHandle = physicsJob.Schedule();
@@ -262,6 +298,32 @@ public class Simulator : MonoBehaviour
             {
                 var movementComponent = MovementComponents[i];
                 Gizmos.DrawWireSphere(movementComponent.TargetPosition, 0.5f);
+            }
+        }
+
+        if (DBGAttack)
+        {
+            for (int i = 0; i < MovementComponents.Count; i++)
+            {
+                var movement = MovementComponents[i];
+
+                if (movement.Target != -1)
+                {
+                    var target = MovementComponents[movement.Target];
+                    Gizmos.DrawLine(movement.Position, target.Position);
+                }
+
+                if (movement.Attacking)
+                {
+                    Gizmos.color = Color.red;
+                }
+                else
+                {
+                    Gizmos.color = Color.grey;
+                }
+
+                Gizmos.DrawWireSphere(movement.Position + new float3(0, 0.5f, 0), 0.5f);
+
             }
         }
 

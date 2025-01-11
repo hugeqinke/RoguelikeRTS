@@ -787,7 +787,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 6.86
+      value: 9.79
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.y
@@ -795,7 +795,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -4.7399993
+      value: -2.55
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalRotation.w
@@ -941,7 +941,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.HoldingPosition
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.PreferredDirWeight
@@ -1897,6 +1897,10 @@ PrefabInstance:
       propertyPath: Config.MaxSpeed
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
+      propertyPath: DBG_Movement.Owner
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6846543444978277801, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
@@ -1911,7 +1915,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7968024303189016854, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -1969,20 +1973,21 @@ MonoBehaviour:
   InputManager: {fileID: 465716417}
   ResolveCollisionIterations: 1
   MovingNeighborRadius: 0.25
-  AlertRadius: 2
+  CombatClearRange: 5
   Units: []
   Transforms: []
   MovementComponents: []
-  DBGMediumHash: 1
   MediumSpatialHashConfig:
     Rows: 50
     Columns: 50
     Size: 1
     Center: {fileID: 1377604679}
   Substeps: 2
+  DBGMediumHash: 1
   DBGTarget: 0
   DBGResolvedState: 1
-  DBGForward: 1
+  DBGForward: 0
+  DBGAttack: 0
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -2367,7 +2372,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 7.68
+      value: 8.33
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.y
@@ -2375,7 +2380,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 5.23
+      value: 0.21
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2416,6 +2421,10 @@ PrefabInstance:
     - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: Config.MaxSpeed
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
+      propertyPath: DBG_Movement.Owner
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6846543444978277801, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_Materials.Array.data[0]
@@ -2689,7 +2698,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7968024303189016854, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -3246,7 +3255,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7968024303189016854, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -3640,7 +3649,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 5.19
+      value: 7.14
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3648,7 +3657,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 4.889999
+      value: 10.13
       objectReference: {fileID: 0}
     - target: {fileID: 2751052676785604356, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_LocalRotation.w
@@ -3690,6 +3699,10 @@ PrefabInstance:
       propertyPath: Config.MaxSpeed
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 4086103115982564691, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
+      propertyPath: DBG_Movement.Owner
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6846543444978277801, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
@@ -3704,7 +3717,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7968024303189016854, guid: d37ec64ef354640baaf9d5fb620c56b9, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
