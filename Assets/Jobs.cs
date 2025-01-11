@@ -68,7 +68,6 @@ public struct PhysicsJob : IJob
             int unitIdx,
             NativeMultiHashMap<int, int>.Enumerator neighborIndexes)
     {
-        var clearPath = true;
         MathUtil.OBB obb;
         if (unit.Target != -1)
         {
@@ -77,13 +76,9 @@ public struct PhysicsJob : IJob
             var rel = targetUnit.Position - unit.Position;
 
             var angle = signedangle(math.right(), rel, math.up());
-            if (unit.DBG)
-            {
-                Debug.Log(angle);
-            }
-            obb = new MathUtil.OBB(center, math.length(rel), 2 * (unit.Radius - unit.Radius * 0.25f), angle);
+            obb = new MathUtil.OBB(center, math.length(rel), 2 * (unit.Radius - unit.Radius * 0.5f), angle);
 
-            if (unit.DBG)
+            /* if (unit.DBG)
             {
                 var a = obb.Position - obb.Extents.x * obb.XAxis - obb.Extents.z * obb.ZAxis + new float3(0, 1, 0);
                 var b = obb.Position - obb.Extents.x * obb.XAxis + obb.Extents.z * obb.ZAxis + new float3(0, 1, 0);
@@ -94,7 +89,7 @@ public struct PhysicsJob : IJob
                 Debug.DrawLine(b, c, Color.magenta);
                 Debug.DrawLine(c, d, Color.magenta);
                 Debug.DrawLine(d, a, Color.magenta);
-            }
+            } */
 
             foreach (var neighborIdx in neighborIndexes)
             {
@@ -105,22 +100,13 @@ public struct PhysicsJob : IJob
                     var circle = new MathUtil.Circle(neighbor.Position, neighbor.Radius);
                     if (MathUtil.OverlapCircleOBB(circle, obb))
                     {
-                        clearPath = false;
-
-                        if (unit.DBG)
-                        {
-                            /* Debug.DrawLine(
-                                unit.Position + new float3(0, 1.5f, 0),
-                                neighbor.Position + new float3(0, 1.5f, 0),
-                                Color.magenta); */
-                        }
-                        // return false;
+                        return false;
                     }
                 }
             }
         }
 
-        return clearPath;
+        return true;
     }
 
     private int ChooseNeighbor(MovementComponent unit, int unitIdx, NativeMultiHashMap<int, int>.Enumerator neighborIndexes)
@@ -145,6 +131,8 @@ public struct PhysicsJob : IJob
                     sqrDst,
                     avoidanceType))
             {
+
+                Debug.DrawLine(unit.Position + new float3(0, 0.5f, 0), neighbor.Position + new float3(0, 0.5f, 0), Color.magenta);
                 if (sqrDst < nearSqrDst)
                 {
                     nearSqrDst = sqrDst;
@@ -152,6 +140,12 @@ public struct PhysicsJob : IJob
                     avoidancePriority = (int)avoidanceType;
                 }
             }
+        }
+
+        if (nearNeighbor != -1)
+        {
+            var neighbor = Units[nearNeighbor];
+            Debug.DrawLine(unit.Position + new float3(0, 1f, 0), neighbor.Position + new float3(0, 1, 0), Color.green);
         }
 
         return nearNeighbor;
@@ -176,7 +170,7 @@ public struct PhysicsJob : IJob
             {
                 if (neighbor.SidePreference != 0 && unit.SidePreference != neighbor.SidePreference)
                 {
-                    // This is to make sure two moving units eventually resolve their incoming collisoin.  If two units have
+                    // This is to make sure two moving units eventually resolve their incoming collision.  If two units have
                     // opposite signs for their side preferences, then they'll run into each other forever
                     unit.SidePreference = neighbor.SidePreference;
                 }
@@ -394,18 +388,17 @@ public struct PhysicsJob : IJob
                 var target = Units[unit.Target];
                 var targetSqDst = math.distancesq(target.Position, unit.Position);
 
-                // if (targetSqDst < CombatClearRange * CombatClearRange
-                // && ClearPath(unit, i, combatNeighbors.GetValuesForKey(i)))
-                if (ClearPath(unit, i, combatNeighbors.GetValuesForKey(i)))
+                if (targetSqDst < CombatClearRange * CombatClearRange
+                        && ClearPath(unit, i, combatNeighbors.GetValuesForKey(i)))
                 {
                     unit.PreferredDir = math.normalizesafe(target.Position - unit.Position);
-                    Debug.DrawLine(unit.Position, target.Position, Color.green);
+                    // Debug.DrawLine(unit.Position, target.Position, Color.green);
                 }
                 else
                 {
                     unit = CalculatePreferredDirection(i, unit, neighbors.GetValuesForKey(i));
                     var neighbor = Units[unit.Target];
-                    Debug.DrawLine(unit.Position, neighbor.Position, Color.red);
+                    // Debug.DrawLine(unit.Position, neighbor.Position, Color.red);
                 }
             }
             else if (!unit.Resolved && unit.Target == -1)
@@ -678,11 +671,8 @@ public struct PhysicsJob : IJob
         }
 
         var avoidanceType = GetAvoidanceType(neighbor);
-
         var validResolveState = !neighbor.Resolved || (neighbor.Resolved && neighbor.HoldingPosition);
-
-        var neighborInCombat = NeighborInCombat(unit, neighbor);
-        var validNonCombatConstraint = !neighborInCombat && ResolveFriendNonCombatConstraints(unit, neighbor, avoidancePriority);
+        var validNonCombatConstraint = ResolveFriendNonCombatConstraints(unit, neighbor, avoidancePriority);
 
         if ((int)avoidanceType >= avoidancePriority
                 && validResolveState
@@ -696,37 +686,12 @@ public struct PhysicsJob : IJob
         }
     }
 
-    private bool NeighborInCombat(MovementComponent unit, MovementComponent neighbor)
-    {
-        return neighbor.Attacking;
-        // return neighbor.Attacking || (neighbor.InAlertRange && neighborUnitComponent.Target == unitComponent.Target);
-    }
-
     private bool ResolveFriendNonCombatConstraints(MovementComponent unit, MovementComponent neighbor, float avoidancePriority)
     {
         // Test if same group or going towards the same direction
         var sameGroup = neighbor.CurrentGroup == unit.CurrentGroup;
 
-        var sameDirection = false;
-        var unitDesiredDir = unit.TargetPosition - unit.Position;
-
-        if (math.lengthsq(neighbor.Velocity) > Mathf.Epsilon)
-        {
-            // Only check same direction if neighbor's velocity is greater than zero
-            // otherwise, if a unit is stationary and got pushed, this might cause
-            // problems with avoiding units getting stuck on this neighbor
-            var neighborDesiredDir = neighbor.TargetPosition - neighbor.Position;
-
-            if (math.lengthsq(neighborDesiredDir) > Mathf.Epsilon)
-            {
-                if (math.abs(signedangle(unitDesiredDir, neighborDesiredDir, math.up())) < 30)
-                {
-                    sameDirection = true;
-                }
-            }
-        }
-
-        return !sameDirection && !sameGroup;
+        return !sameGroup || (sameGroup && math.dot(neighbor.Velocity, unit.Velocity) < 0);
     }
 
     private bool ValidTargetPositionConstraint(MovementComponent unit, MovementComponent neighbor)

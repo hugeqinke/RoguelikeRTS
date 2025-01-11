@@ -221,7 +221,8 @@ public class Simulator : MonoBehaviour
         {
             Units = movementComponents,
             SpatialHash = mediumSpatialHash,
-            Meta = _mediumSpatialHashMeta
+            Meta = _mediumSpatialHashMeta,
+            CombatClearRange = CombatClearRange
         };
 
         var combatJobHandle = combatJob.Schedule();

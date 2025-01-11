@@ -226,11 +226,11 @@ MonoBehaviour:
     TimeHorizon: 0.25
     HoldingPosition: 0
     FlockRadius: 2
-    FlockWeight: 1.25
+    FlockWeight: 1
     LateralWeight: 1
-    SeparationWeight: 0.25
-    OtherSeparationWeight: 0.5
-    AttackRadius: 0.1
+    SeparationWeight: 0.1
+    OtherSeparationWeight: 0.1
+    AttackRadius: 0.075
     AttackSpeed: 0
   DBG_Movement:
     Owner: 0

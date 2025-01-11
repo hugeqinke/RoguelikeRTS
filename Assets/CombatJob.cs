@@ -12,13 +12,57 @@ public struct CombatJob : IJob
     public NativeArray<MovementComponent> Units;
     [ReadOnly] public NativeMultiHashMap<int, int> SpatialHash;
     public SpatialHashMeta Meta;
+    public float CombatClearRange;
 
     public void Execute()
     {
         var neighbors = UtilityFunctions.BroadPhase(Units, SpatialHash, Meta);
+
+        var cellRange = UtilityFunctions.RangeToCellCount(CombatClearRange, Meta);
+        var combatNeighbors = UtilityFunctions.BroadPhase(Units, SpatialHash, Meta, cellRange);
+
         for (int i = 0; i < Units.Length; i++)
         {
+            Retarget(i, combatNeighbors.GetValuesForKey(i));
             ProcessCombat(i, neighbors);
+        }
+    }
+
+    private void Retarget(int i, NativeMultiHashMap<int, int>.Enumerator neighborIndexes)
+    {
+        var unit = Units[i];
+        var targetIdx = unit.Target;
+
+        if (targetIdx != -1)
+        {
+            var targetUnit = Units[targetIdx];
+            var sqrDst = math.distancesq(targetUnit.Position, unit.Position);
+
+            var nearTargetIdx = -1;
+
+            foreach (var neighborIdx in neighborIndexes)
+            {
+                var neighbor = Units[neighborIdx];
+                if (neighbor.Owner == unit.Owner)
+                {
+                    continue;
+                }
+
+                var neighborSqrDst = math.distancesq(neighbor.Position, unit.Position);
+
+                if (neighborSqrDst < sqrDst)
+                {
+                    nearTargetIdx = neighborIdx;
+                    sqrDst = neighborSqrDst;
+                }
+            }
+
+            if (nearTargetIdx != -1)
+            {
+                unit.Target = nearTargetIdx;
+            }
+
+            Units[i] = unit;
         }
     }
 
