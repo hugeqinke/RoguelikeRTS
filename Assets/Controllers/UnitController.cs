@@ -47,8 +47,9 @@ public struct Config
 
     public float AttackRadius;
     public float AttackSpeed;
-    public int MaxHealth;
     public int Damage;
+    public float AttackAnimationLength;
+    public int MaxHealth;
 }
 
 [System.Serializable]
@@ -89,6 +90,7 @@ public struct MovementComponent
     public int Health;
     public int Damage;
     public float LastAttackTime;
+    public float AttackAnimationLength;
 
     // Physics
     public float Mass;
@@ -125,7 +127,8 @@ public struct MovementComponent
         AttackSpeed = unitController.Config.AttackSpeed;
         Damage = unitController.Config.Damage;
         MaxHealth = unitController.Config.MaxHealth;
-        Health = unitController.Config.MaxHealth - 50;
+        Health = unitController.Config.MaxHealth;
+        AttackAnimationLength = unitController.Config.AttackAnimationLength;
         LastAttackTime = -math.INFINITY;
 
         Mass = unitController.Config.Mass;

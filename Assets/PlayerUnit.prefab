@@ -437,8 +437,9 @@ MonoBehaviour:
     OtherSeparationWeight: 0.1
     AttackRadius: 0.075
     AttackSpeed: 1.5
-    MaxHealth: 100
     Damage: 8
+    AttackAnimationLength: 0.5
+    MaxHealth: 100
   DBG_Movement:
     Owner: 0
     Radius: 0
@@ -462,6 +463,7 @@ MonoBehaviour:
     Health: 0
     Damage: 0
     LastAttackTime: 0
+    AttackAnimationLength: 0
     Mass: 0
     Velocity:
       x: 0

@@ -379,10 +379,9 @@ public struct PhysicsJob : IJob
             }
 
             // Set preferred velocites - used to calculate where units should be
-            if (!unit.Resolved && unit.Target != -1 && unit.Attacking)
+            if (!unit.Resolved && unit.Target != -1 && CurrentTime < unit.LastAttackTime + unit.AttackAnimationLength)
             {
                 unit.PreferredDir = float3.zero;
-                unit.SidePreference = 0;
             }
             else if (!unit.Resolved && unit.Target != -1 && !unit.Attacking)
             {
