@@ -138,6 +138,7 @@ public class Simulator : MonoBehaviour
         var targetIdx = IndexMap[target];
         var movementComponent = MovementComponents[unitIdx];
         movementComponent.Target = targetIdx;
+        movementComponent.ResolvedCombat = false;
         MovementComponents[unitIdx] = movementComponent;
     }
 
@@ -183,6 +184,7 @@ public class Simulator : MonoBehaviour
             var movementComponent = MovementComponents[idx];
             movementComponent.Velocity = float3.zero;
             movementComponent.Resolved = false;
+            movementComponent.AttackMoveResolved = true;
             movementComponent.HoldingPosition = false;
             movementComponent.Target = -1;
             MovementComponents[idx] = movementComponent;

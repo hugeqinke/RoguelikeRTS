@@ -35,11 +35,29 @@ public struct CombatJob : IJob
             var target = Units[unit.Target];
 
             unit.TargetPosition = target.Position;
-            unit.StopPosition = target.Position;
             unit.MoveStartPosition = unit.Position;
             if (!unit.Attacking)
             {
                 unit.Resolved = false;
+            }
+        }
+        else
+        {
+            if (!unit.AttackMoveResolved)
+            {
+                unit.TargetPosition = unit.AttackMoveDestination;
+            }
+            else if (!unit.ResolvedCombat)
+            {
+                var relLengthSq = math.lengthsq(unit.TargetPosition - unit.Position);
+                var threshold = unit.AttackRadius + unit.Radius;
+                if (relLengthSq < threshold * threshold)
+                {
+                    unit.TargetPosition = unit.Position;
+                    unit.StopPosition = unit.Position;
+                    unit.Resolved = true;
+                    unit.ResolvedCombat = true;
+                }
             }
         }
 
@@ -51,7 +69,7 @@ public struct CombatJob : IJob
         var unit = Units[i];
         var targetIdx = unit.Target;
 
-        if (unit.Attacking || (targetIdx == -1 && !unit.Resolved))
+        if (unit.Attacking || (targetIdx == -1 && !unit.Resolved && unit.AttackMoveResolved))
         {
             return;
         }
@@ -127,7 +145,6 @@ public struct CombatJob : IJob
                 var position = Units[unit.Target].Position;
 
                 unit.TargetPosition = position;
-                unit.StopPosition = position;
                 unit.MoveStartPosition = unit.Position;
                 unit.Resolved = false;
             }

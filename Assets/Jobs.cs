@@ -376,11 +376,11 @@ public struct PhysicsJob : IJob
             }
 
             // Set preferred velocites - used to calculate where units should be
-            if (!unit.Resolved && unit.Target != -1 && CurrentTime < unit.LastAttackTime + unit.AttackAnimationLength)
+            if (unit.Attacking)
             {
                 unit.PreferredDir = float3.zero;
             }
-            else if (unit.Attacking)
+            else if (CurrentTime < unit.LastAttackTime + unit.AttackAnimationLength)
             {
                 unit.PreferredDir = float3.zero;
             }
@@ -395,14 +395,11 @@ public struct PhysicsJob : IJob
                         && ClearPath(unit, i, combatNeighbors.GetValuesForKey(i)))
                 {
                     unit.PreferredDir = math.normalizesafe(target.Position - unit.Position);
-                    // Debug.DrawLine(unit.Position, target.Position, Color.green);
                 }
                 else
                 {
                     unit.PreferredDir = math.normalizesafe(target.Position - unit.Position);
                     unit = CalculatePreferredDirection(i, unit, neighbors.GetValuesForKey(i));
-                    // var neighbor = Units[unit.Target];
-                    // Debug.DrawLine(unit.Position, neighbor.Position, Color.red);
                 }
             }
             else if (!unit.Resolved && unit.Target == -1)
@@ -800,6 +797,8 @@ public struct PhysicsJob : IJob
                         unit.Velocity = Vector3.zero;
                         unit.Resolved = true;
                         unit.StopPosition = unit.Position;
+
+                        unit.AttackMoveResolved = true;
                     }
                 }
                 else

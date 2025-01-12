@@ -69,6 +69,7 @@ public struct MovementComponent
     [Header("Misc States")]
     // State + Movement heuristics
     public bool Resolved;
+    public bool ResolvedCombat;
     public bool HoldingPosition;
     public int SidePreference; // Side preference key: -1 -> left / 0 -> none / 1 -> right
     public float LastMoveTime;
@@ -91,7 +92,6 @@ public struct MovementComponent
     public int Damage;
     public float LastAttackTime;
     public float AttackAnimationLength;
-
     public bool AttackMoveResolved;
     public float3 AttackMoveDestination;
 
@@ -121,6 +121,7 @@ public struct MovementComponent
         LastMoveTime = Mathf.NegativeInfinity;
 
         Resolved = true;
+        ResolvedCombat = true;
         HoldingPosition = unitController.Config.HoldingPosition;
         SidePreference = 0;
 
