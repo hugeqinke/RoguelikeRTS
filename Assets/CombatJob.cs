@@ -13,6 +13,7 @@ public struct CombatJob : IJob
     [ReadOnly] public NativeMultiHashMap<int, int> SpatialHash;
     public SpatialHashMeta Meta;
     public float CombatClearRange;
+    public float Time;
 
     public void Execute()
     {
@@ -55,8 +56,7 @@ public struct CombatJob : IJob
         var unit = Units[i];
         var targetIdx = unit.Target;
 
-        if (unit.Attacking
-            || (targetIdx == -1 && math.lengthsq(unit.Position - unit.TargetPosition) > math.EPSILON))
+        if (unit.Attacking || (targetIdx == -1 && !unit.Resolved))
         {
             return;
         }
@@ -163,23 +163,33 @@ public struct CombatJob : IJob
         }
         else
         {
-            if (unit.Target != -1)
+            if (unit.Target == -1 || !InRange(unit))
             {
-                var neighbor = Units[unit.Target];
-                var relDir = math.lengthsq(neighbor.Position - unit.Position);
-
-                var attackRadius = unit.AttackRadius + unit.Radius + neighbor.Radius;
-                if (math.lengthsq(relDir) > attackRadius * attackRadius)
-                {
-                    unit.Attacking = false;
-                }
+                unit.Attacking = false;
             }
             else
             {
-                unit.Attacking = false;
+                if (Time > unit.LastAttackTime + unit.AttackSpeed)
+                {
+                    // TODO: Maybe add this to an event queue and process it later? 
+                    var targetUnit = Units[unit.Target];
+                    targetUnit.Health -= unit.Damage;
+                    Units[unit.Target] = targetUnit;
+
+                    unit.LastAttackTime = Time;
+                }
             }
         }
 
         Units[i] = unit;
+    }
+
+    private bool InRange(MovementComponent unit)
+    {
+        var neighbor = Units[unit.Target];
+        var relDir = math.lengthsq(neighbor.Position - unit.Position);
+
+        var attackRadius = unit.AttackRadius + unit.Radius + neighbor.Radius;
+        return math.lengthsq(relDir) <= attackRadius * attackRadius;
     }
 }

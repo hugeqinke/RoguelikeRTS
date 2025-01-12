@@ -32,7 +32,6 @@ public class Simulator : MonoBehaviour
 
     // Job system orders
     public List<GameObject> Units;
-    public Transform[] Transforms;
     public List<MovementComponent> MovementComponents;
 
     // Physics
@@ -84,7 +83,6 @@ public class Simulator : MonoBehaviour
         Units = new List<GameObject>();
         MovementComponents = new List<MovementComponent>();
 
-        Transforms = new Transform[objs.Length];
 
         for (int i = 0; i < objs.Length; i++)
         {
@@ -93,7 +91,6 @@ public class Simulator : MonoBehaviour
 
             var unitController = obj.GetComponent<UnitController>();
             MovementComponents.Add(new MovementComponent(unitController));
-            Transforms[i] = obj.transform;
 
             IndexMap.Add(obj, i);
             UnitControllers.Add(obj, unitController);
@@ -161,9 +158,86 @@ public class Simulator : MonoBehaviour
         }
     }
 
+    private void ClearDeadUnits()
+    {
+        var remap = new Dictionary<int, int>();
+
+        var newUnits = new List<GameObject>();
+        var newMovementComponents = new List<MovementComponent>();
+
+        // TODO: Consider jobifying this?
+        for (int i = 0; i < MovementComponents.Count; i++)
+        {
+            var movementComponent = MovementComponents[i];
+            var unit = Units[i];
+
+            if (movementComponent.Health <= 0)
+            {
+                PlayerIndexMap.Remove(unit);
+                IndexMap.Remove(unit);
+                UnitControllers.Remove(unit);
+
+                Destroy(unit.gameObject);
+            }
+            else
+            {
+                var newIndex = newUnits.Count;
+
+                remap.Add(i, newIndex);
+                IndexMap[unit] = newIndex;
+
+                newUnits.Add(unit);
+                newMovementComponents.Add(movementComponent);
+            }
+        }
+
+        for (int i = 0; i < newMovementComponents.Count; i++)
+        {
+            var movementComponent = newMovementComponents[i];
+            if (remap.ContainsKey(movementComponent.Target))
+            {
+                var newIndex = remap[movementComponent.Target];
+                movementComponent.Target = newIndex;
+            }
+            else
+            {
+                movementComponent.Target = -1;
+            }
+
+            newMovementComponents[i] = movementComponent;
+        }
+
+        Units = newUnits;
+        MovementComponents = newMovementComponents;
+    }
+
     private void LateUpdate()
     {
         MoveGroupPool.Prune(this);
+
+        ClearDeadUnits();
+
+        // Unit stuff updates
+        for (int i = 0; i < UnitControllers.Count; i++)
+        {
+            var unit = UnitControllers[Units[i]];
+            var movement = MovementComponents[i];
+
+            var lookatPosition = unit.Billboard.transform.position + Camera.main.transform.forward;
+            // lookatPosition.y = unit.HealthBar.transform.position.y;
+            unit.Billboard.transform.LookAt(lookatPosition);
+
+            var t = Mathf.InverseLerp(0, movement.MaxHealth, movement.Health);
+            var length = Mathf.Lerp(0, unit.BackgroundBar.transform.localScale.x, t);
+            var scale = unit.HealthBar.transform.localScale;
+            scale.x = length;
+            unit.HealthBar.transform.localScale = scale;
+
+            var position = unit.BackgroundBar.transform.position;
+            position.x -= unit.BackgroundBar.transform.localScale.x * 0.5f;
+            position.x += length * 0.5f;
+            unit.HealthBar.transform.position = position;
+        }
     }
 
     private int ComputeSpatialHash(SpatialHashMeta meta, Cell cell)
@@ -202,6 +276,7 @@ public class Simulator : MonoBehaviour
 
     private void Update()
     {
+        // Unit updates
         for (int i = 0; i < Units.Count; i++)
         {
             var unitController = UnitControllers[Units[i]];
@@ -222,7 +297,8 @@ public class Simulator : MonoBehaviour
             Units = movementComponents,
             SpatialHash = mediumSpatialHash,
             Meta = _mediumSpatialHashMeta,
-            CombatClearRange = CombatClearRange
+            CombatClearRange = CombatClearRange,
+            Time = Time.time
         };
 
         var combatJobHandle = combatJob.Schedule();

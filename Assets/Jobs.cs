@@ -3,6 +3,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Jobs;
 
 [BurstCompile]
 public struct PhysicsJob : IJob
@@ -1027,3 +1028,4 @@ public struct ChooseNeighborResult
     public int ResolveIndex;
     public bool ClearPathToTarget;
 }
+

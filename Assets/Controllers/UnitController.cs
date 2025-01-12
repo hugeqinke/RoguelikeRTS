@@ -13,6 +13,9 @@ public class UnitController : MonoBehaviour, IComponent
     // on the corners for larger models and slightly more expensive computation
     public List<SphereCollider> SelectionTriggers;
     public GameObject SelectionHighlight;
+    public GameObject HealthBar;
+    public GameObject BackgroundBar;
+    public GameObject Billboard;
 
     public Config Config;
     public MovementComponent DBG_Movement;
@@ -44,6 +47,8 @@ public struct Config
 
     public float AttackRadius;
     public float AttackSpeed;
+    public int MaxHealth;
+    public int Damage;
 }
 
 [System.Serializable]
@@ -80,6 +85,10 @@ public struct MovementComponent
     public bool Attacking;
     public float AttackRadius;
     public float AttackSpeed;
+    public int MaxHealth;
+    public int Health;
+    public int Damage;
+    public float LastAttackTime;
 
     // Physics
     public float Mass;
@@ -114,6 +123,10 @@ public struct MovementComponent
         Attacking = false;
         AttackRadius = unitController.Config.AttackRadius;
         AttackSpeed = unitController.Config.AttackSpeed;
+        Damage = unitController.Config.Damage;
+        MaxHealth = unitController.Config.MaxHealth;
+        Health = unitController.Config.MaxHealth - 50;
+        LastAttackTime = -math.INFINITY;
 
         Mass = unitController.Config.Mass;
         Velocity = float3.zero;
