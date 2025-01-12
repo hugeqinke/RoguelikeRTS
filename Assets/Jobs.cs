@@ -17,7 +17,6 @@ public struct PhysicsJob : IJob
     public float DeltaTime;
     public float CurrentTime;
     public float RotateAmount;
-    public float CombatClearRange;
 
     public bool ProhibitNeighborChoice(
             MovementComponent unit,
@@ -361,10 +360,8 @@ public struct PhysicsJob : IJob
 
     public void Execute()
     {
-        var neighbors = UtilityFunctions.BroadPhase(Units, SpatialHashMap, SpatialHashMeta);
-
-        var cellRange = UtilityFunctions.RangeToCellCount(CombatClearRange, SpatialHashMeta);
-        var combatNeighbors = UtilityFunctions.BroadPhase(Units, SpatialHashMap, SpatialHashMeta, cellRange);
+        var neighbors = UtilityFunctions.BroadPhase(Units, SpatialHashMap, SpatialHashMeta, UtilityFunctions.CellRangeType.MoveHorizon);
+        var combatNeighbors = UtilityFunctions.BroadPhase(Units, SpatialHashMap, SpatialHashMeta, UtilityFunctions.CellRangeType.CombatRange);
 
         // Pre-physics updates
         for (int i = 0; i < Units.Length; i++)
@@ -383,12 +380,18 @@ public struct PhysicsJob : IJob
             {
                 unit.PreferredDir = float3.zero;
             }
+            else if (unit.Attacking)
+            {
+                unit.PreferredDir = float3.zero;
+            }
             else if (!unit.Resolved && unit.Target != -1 && !unit.Attacking)
             {
                 var target = Units[unit.Target];
                 var targetSqDst = math.distancesq(target.Position, unit.Position);
 
-                if (targetSqDst < CombatClearRange * CombatClearRange
+                var acceptableClearRange = math.max(4, unit.AttackRadius);
+
+                if (targetSqDst < acceptableClearRange * acceptableClearRange
                         && ClearPath(unit, i, combatNeighbors.GetValuesForKey(i)))
                 {
                     unit.PreferredDir = math.normalizesafe(target.Position - unit.Position);
@@ -445,7 +448,18 @@ public struct PhysicsJob : IJob
                 }
                 else
                 {
-                    unit.Velocity += unit.PreferredDir * unit.Acceleration * sdt;
+                    if (math.lengthsq(unit.PreferredDir) < math.EPSILON)
+                    {
+                        // TODO: I don't like this.  I should consider
+                        // adding conditions to CheckUnitStop instead, rather
+                        // than having special cases for 0 dir
+                        unit.Velocity = float3.zero;
+                    }
+                    else
+                    {
+                        unit.Velocity += unit.PreferredDir * unit.Acceleration * sdt;
+                    }
+
                     if (math.lengthsq(unit.Velocity) > unit.MaxSpeed * unit.MaxSpeed)
                     {
                         unit.Velocity = math.normalizesafe(unit.Velocity) * unit.MaxSpeed;
@@ -912,10 +926,20 @@ public struct PhysicsJob : IJob
 
 public struct UtilityFunctions
 {
+
+    public enum CellRangeType
+    {
+        Default,
+        Custom,
+        MoveHorizon,
+        CombatRange
+    }
+
     public static NativeMultiHashMap<int, int> BroadPhase(
             NativeArray<MovementComponent> units,
             NativeMultiHashMap<int, int> spatialHashMap,
             SpatialHashMeta spatialHashMeta,
+            CellRangeType cellRangeType,
             int customCellRange = -1)
     {
         var neighbors = new NativeMultiHashMap<int, int>(units.Length * 15, Allocator.Temp);
@@ -926,13 +950,25 @@ public struct UtilityFunctions
 
             int cellRange;
 
-            if (customCellRange != -1)
+            if (cellRangeType == CellRangeType.Custom)
             {
                 cellRange = customCellRange;
             }
-            else
+            else if (cellRangeType == CellRangeType.MoveHorizon)
             {
                 cellRange = ComputeCellRange(unit, cell, spatialHashMeta);
+            }
+            else if (cellRangeType == CellRangeType.CombatRange)
+            {
+                // NOTE: add the spatial hash size here to
+                // offset off by 1 errors
+                cellRange = RangeToCellCount(
+                    unit.AttackRadius + spatialHashMeta.Size,
+                    spatialHashMeta);
+            }
+            else
+            {
+                cellRange = 1;
             }
 
             var minRow = cell.Row - cellRange;

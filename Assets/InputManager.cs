@@ -9,7 +9,8 @@ public enum InputState
 {
     Idle,
     Selecting,
-    BoxSelect
+    BoxSelect,
+    AttackOrder
 }
 
 public class InputManager : MonoBehaviour
@@ -43,6 +44,9 @@ public class InputManager : MonoBehaviour
             case InputState.BoxSelect:
                 ProcessBoxSelect();
                 break;
+            case InputState.AttackOrder:
+                ProcessAttackOrder();
+                break;
         }
 
         if (Keyboard.current.hKey.wasPressedThisFrame)
@@ -54,6 +58,38 @@ public class InputManager : MonoBehaviour
                 Simulator.Instance.ForceStop(unit);
                 Simulator.Instance.HoldPosition(unit);
             }
+        }
+
+        if (Keyboard.current.aKey.wasPressedThisFrame)
+        {
+            _currentInputState = InputState.AttackOrder;
+        }
+    }
+
+    public void ProcessAttackOrder()
+    {
+        if (Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            var ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+            if (Physics.Raycast(ray, out RaycastHit hitInfo, 600, InputUtils.GroundLayerMask))
+            {
+                var point = hitInfo.point;
+                point.y = 0;
+
+                Simulator.ResetMovement(_selectedUnits);
+
+                // Issue attack order
+                foreach (var unit in _selectedUnits)
+                {
+                    Simulator.AttackMove(unit, point);
+                }
+            }
+
+            _currentInputState = InputState.Idle;
+        }
+        else if (Mouse.current.rightButton.wasPressedThisFrame)
+        {
+            _currentInputState = InputState.Idle;
         }
     }
 

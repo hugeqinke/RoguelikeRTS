@@ -92,6 +92,9 @@ public struct MovementComponent
     public float LastAttackTime;
     public float AttackAnimationLength;
 
+    public bool AttackMoveResolved;
+    public float3 AttackMoveDestination;
+
     // Physics
     public float Mass;
     public float3 Velocity;
@@ -130,6 +133,8 @@ public struct MovementComponent
         Health = unitController.Config.MaxHealth;
         AttackAnimationLength = unitController.Config.AttackAnimationLength;
         LastAttackTime = -math.INFINITY;
+        AttackMoveResolved = true;
+        AttackMoveDestination = unitController.transform.position;
 
         Mass = unitController.Config.Mass;
         Velocity = float3.zero;

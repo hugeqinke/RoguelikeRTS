@@ -12,21 +12,16 @@ public struct CombatJob : IJob
     public NativeArray<MovementComponent> Units;
     [ReadOnly] public NativeMultiHashMap<int, int> SpatialHash;
     public SpatialHashMeta Meta;
-    public float CombatClearRange;
     public float Time;
 
     public void Execute()
     {
-        var neighbors = UtilityFunctions.BroadPhase(Units, SpatialHash, Meta);
-
-        var cellRange = UtilityFunctions.RangeToCellCount(CombatClearRange, Meta);
-        var combatNeighbors = UtilityFunctions.BroadPhase(Units, SpatialHash, Meta, cellRange);
+        var combatNeighbors = UtilityFunctions.BroadPhase(Units, SpatialHash, Meta, UtilityFunctions.CellRangeType.CombatRange);
 
         for (int i = 0; i < Units.Length; i++)
         {
             Retarget(i, combatNeighbors.GetValuesForKey(i));
-            ProcessCombat(i, neighbors);
-
+            ProcessCombat(i);
             UpdateTargetPositions(i);
         }
     }
@@ -138,12 +133,10 @@ public struct CombatJob : IJob
             }
         }
 
-
-
         Units[i] = unit;
     }
 
-    private void ProcessCombat(int i, NativeMultiHashMap<int, int> neighbors)
+    private void ProcessCombat(int i)
     {
         var unit = Units[i];
 
@@ -151,11 +144,7 @@ public struct CombatJob : IJob
         {
             if (unit.Target != -1)
             {
-                var neighbor = Units[unit.Target];
-                var relDir = neighbor.Position - unit.Position;
-
-                var attackRadius = unit.AttackRadius + unit.Radius + neighbor.Radius;
-                if (math.lengthsq(relDir) <= attackRadius * attackRadius)
+                if (InRange(unit))
                 {
                     unit.Attacking = true;
                 }
@@ -187,9 +176,9 @@ public struct CombatJob : IJob
     private bool InRange(MovementComponent unit)
     {
         var neighbor = Units[unit.Target];
-        var relDir = math.lengthsq(neighbor.Position - unit.Position);
+        var relLenSq = math.lengthsq(neighbor.Position - unit.Position);
 
         var attackRadius = unit.AttackRadius + unit.Radius + neighbor.Radius;
-        return math.lengthsq(relDir) <= attackRadius * attackRadius;
+        return relLenSq <= attackRadius * attackRadius;
     }
 }

@@ -101,6 +101,17 @@ public class Simulator : MonoBehaviour
         }
     }
 
+    public void AttackMove(GameObject unit, float3 position)
+    {
+        var unitIndex = IndexMap[unit];
+        var movementComponent = MovementComponents[unitIndex];
+        movementComponent.AttackMoveDestination = position;
+        movementComponent.AttackMoveResolved = false;
+        MovementComponents[unitIndex] = movementComponent;
+
+        SetMovementValues(unit, position);
+    }
+
     public void ForceStop(GameObject unit)
     {
         var unitIndex = IndexMap[unit];
@@ -323,7 +334,6 @@ public class Simulator : MonoBehaviour
             Units = movementComponents,
             SpatialHash = mediumSpatialHash,
             Meta = _mediumSpatialHashMeta,
-            CombatClearRange = CombatClearRange,
             Time = Time.time
         };
 
@@ -367,7 +377,6 @@ public class Simulator : MonoBehaviour
             DeltaTime = Time.fixedDeltaTime,
             CurrentTime = Time.fixedTime,
             RotateAmount = rotateAmount * Mathf.Deg2Rad,
-            CombatClearRange = CombatClearRange
         };
 
         var physicsJobHandle = physicsJob.Schedule();
