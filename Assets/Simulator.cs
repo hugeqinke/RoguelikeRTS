@@ -101,6 +101,26 @@ public class Simulator : MonoBehaviour
         }
     }
 
+    public void ForceStop(GameObject unit)
+    {
+        var unitIndex = IndexMap[unit];
+        var movementComponent = MovementComponents[unitIndex];
+        movementComponent.StopPosition = movementComponent.Position;
+        movementComponent.TargetPosition = movementComponent.Position;
+        movementComponent.Velocity = float3.zero;
+        movementComponent.Resolved = true;
+
+        MovementComponents[unitIndex] = movementComponent;
+    }
+
+    public void HoldPosition(GameObject unit)
+    {
+        var unitIndex = IndexMap[unit];
+        var movementComponent = MovementComponents[unitIndex];
+        movementComponent.HoldingPosition = true;
+        MovementComponents[unitIndex] = movementComponent;
+    }
+
     public void SetAttackValues(GameObject unit, GameObject target)
     {
         var unitIdx = IndexMap[unit];
