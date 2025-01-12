@@ -165,6 +165,8 @@ public class Simulator : MonoBehaviour
         var newUnits = new List<GameObject>();
         var newMovementComponents = new List<MovementComponent>();
 
+        var deadUnits = new List<GameObject>();
+
         // TODO: Consider jobifying this?
         for (int i = 0; i < MovementComponents.Count; i++)
         {
@@ -176,6 +178,8 @@ public class Simulator : MonoBehaviour
                 PlayerIndexMap.Remove(unit);
                 IndexMap.Remove(unit);
                 UnitControllers.Remove(unit);
+
+                deadUnits.Add(unit);
 
                 Destroy(unit.gameObject);
             }
@@ -206,6 +210,8 @@ public class Simulator : MonoBehaviour
 
             newMovementComponents[i] = movementComponent;
         }
+
+        InputManager.ClearDeadUnits(deadUnits);
 
         Units = newUnits;
         MovementComponents = newMovementComponents;

@@ -57,6 +57,17 @@ public class InputManager : MonoBehaviour
         }
     }
 
+    public void ClearDeadUnits(List<GameObject> deadUnits)
+    {
+        foreach (var deadUnit in deadUnits)
+        {
+            if (_selectedUnits.Contains(deadUnit))
+            {
+                _selectedUnits.Remove(deadUnit);
+            }
+        }
+    }
+
     // State processors
     private void EnterSelectingState()
     {
