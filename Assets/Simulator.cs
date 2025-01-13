@@ -213,6 +213,7 @@ public class Simulator : MonoBehaviour
                 UnitControllers.Remove(unit);
 
                 deadUnits.Add(unit);
+                remap.Add(i, -1);
 
                 Destroy(unit.gameObject);
             }
@@ -233,8 +234,11 @@ public class Simulator : MonoBehaviour
             var movementComponent = newMovementComponents[i];
             if (remap.ContainsKey(movementComponent.Target))
             {
-                var newIndex = remap[movementComponent.Target];
-                movementComponent.Target = newIndex;
+                if (remap[movementComponent.Target] != -1)
+                {
+                    var newIndex = remap[movementComponent.Target];
+                    movementComponent.Target = newIndex;
+                }
             }
             else
             {
@@ -245,6 +249,7 @@ public class Simulator : MonoBehaviour
         }
 
         InputManager.ClearDeadUnits(deadUnits);
+        MoveGroupPool.ClearDeadUnits(remap);
 
         Units = newUnits;
         MovementComponents = newMovementComponents;
@@ -630,6 +635,35 @@ public class MoveGroupPool
         {
             FreePool.Push(i);
         }
+    }
+
+    public void ClearDeadUnits(Dictionary<int, int> remap)
+    {
+        var newMoveGroup = new Dictionary<int, HashSet<int>>();
+
+        foreach (var kvp in MoveGroups)
+        {
+            var newHashset = new HashSet<int>();
+
+            foreach (var unit in kvp.Value)
+            {
+                if (remap.ContainsKey(unit))
+                {
+                    if (remap[unit] != -1)
+                    {
+                        newHashset.Add(remap[unit]);
+                    }
+                }
+                else
+                {
+                    newHashset.Add(unit);
+                }
+            }
+
+            newMoveGroup[kvp.Key] = newHashset;
+        }
+
+        MoveGroups = newMoveGroup;
     }
 
     private int GetFreeId()

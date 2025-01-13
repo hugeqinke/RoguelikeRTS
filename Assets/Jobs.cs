@@ -962,7 +962,7 @@ public struct UtilityFunctions
                 // NOTE: add the spatial hash size here to
                 // offset off by 1 errors
                 cellRange = RangeToCellCount(
-                    unit.AttackRadius + spatialHashMeta.Size,
+                    math.max(4, unit.AttackRadius + spatialHashMeta.Size),
                     spatialHashMeta);
             }
             else
