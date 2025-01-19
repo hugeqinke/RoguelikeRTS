@@ -738,6 +738,7 @@ public static class Util
         public static string PlayerUnitLayer = "PlayerUnit";
         public static string AIUnit = "AIUnit";
         public static string GroundLayer = "Ground";
+        public static string BuildingLayer = "Building";
 
         private static LayerMask _playerAndAIUnitMask;
         public static LayerMask PlayerAndAIUnitMask
@@ -752,6 +753,7 @@ public static class Util
     public static class Tags
     {
         public static string PlayerUnit = "PlayerUnit";
+        public static string InfrastructureManager = "InfrastructureManager";
     }
 
     public static void DrawBox(Vector3 pos, Quaternion rot, Vector3 scale, Color c, float duration)

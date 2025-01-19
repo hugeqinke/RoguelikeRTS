@@ -232,17 +232,14 @@ public class Simulator : MonoBehaviour
         for (int i = 0; i < newMovementComponents.Count; i++)
         {
             var movementComponent = newMovementComponents[i];
-            if (remap.ContainsKey(movementComponent.Target))
+            if (!remap.ContainsKey(movementComponent.Target) || remap[movementComponent.Target] == -1)
             {
-                if (remap[movementComponent.Target] != -1)
-                {
-                    var newIndex = remap[movementComponent.Target];
-                    movementComponent.Target = newIndex;
-                }
+                movementComponent.Target = -1;
             }
             else
             {
-                movementComponent.Target = -1;
+                var newIndex = remap[movementComponent.Target];
+                movementComponent.Target = newIndex;
             }
 
             newMovementComponents[i] = movementComponent;
@@ -618,6 +615,13 @@ public struct Cell
     {
         Row = row;
         Column = column;
+    }
+
+    public static Cell operator +(Cell a, Cell b)
+    {
+        a.Row += b.Row;
+        a.Column += b.Column;
+        return a;
     }
 }
 
