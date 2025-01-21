@@ -53,6 +53,16 @@ public struct Config
 }
 
 [System.Serializable]
+public struct UnitStatsComponent
+{
+    public UnitType UnitType;
+    public string Name;
+    public int MaxHealth;
+    public int Health;
+    public int Kills;
+}
+
+[System.Serializable]
 public struct MovementComponent
 {
     [Header("Meta")]
@@ -158,17 +168,6 @@ public struct MovementComponent
 
         DBG = unitController.DBG;
     }
-}
-
-[System.Serializable]
-public struct Kinematic
-{
-    public float SpeedCap;
-    public Vector3 PreferredVelocity;
-
-    public Vector3 Velocity;
-    public Vector3 Position;
-    public float Orientation;
 }
 
 public enum Owner

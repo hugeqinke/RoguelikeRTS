@@ -83,7 +83,6 @@ public class Simulator : MonoBehaviour
         Units = new List<GameObject>();
         MovementComponents = new List<MovementComponent>();
 
-
         for (int i = 0; i < objs.Length; i++)
         {
             var obj = objs[i];

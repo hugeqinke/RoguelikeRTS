@@ -8,6 +8,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 220468127464292484, guid: 33dd4ace2c63be2478ba3c40359e5787, type: 3}
+      propertyPath: BuildingType
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 220468127464292484, guid: 33dd4ace2c63be2478ba3c40359e5787, type: 3}
+      propertyPath: MaxBuildCapacity
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 220468127464292484, guid: 33dd4ace2c63be2478ba3c40359e5787, type: 3}
+      propertyPath: RemainingBuildCapacity
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 290727086853814142, guid: 33dd4ace2c63be2478ba3c40359e5787, type: 3}
       propertyPath: m_Name
       value: ControllerEngineeringBay

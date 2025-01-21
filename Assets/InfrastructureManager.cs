@@ -491,7 +491,7 @@ public class InfrastructureManager : MonoBehaviour
             PlayerManager.GasCount -= costs.Gas;
             PlayerManager.RemainingSupply -= costs.Supply;
 
-            PlayerManager.AddUnit(unitType, 1);
+            PlayerManager.AddUnit(unitType);
             PlayerManager.UpdateText();
             SelectedBuilding.UpdateVisuals();
         }
