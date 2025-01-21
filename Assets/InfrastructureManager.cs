@@ -11,7 +11,8 @@ namespace Infrastructure
     {
         None,
         PlaceBuilding,
-        PlaceFloatingBuilding
+        PlaceFloatingBuilding,
+        SelectedBuilding
     }
 
     public enum BuildingType
@@ -61,7 +62,6 @@ public class InfrastructureManager : MonoBehaviour
     public FloatingIcon FloatingFactoryImage;
     public FloatingIcon FloatingStarportImage;
     public FloatingIcon FloatingSupplyDepotImage;
-
     public FloatingIcon _currentIcon;
 
     public HashSet<BuildingController> FloatingBuildings;
@@ -70,19 +70,40 @@ public class InfrastructureManager : MonoBehaviour
     public GameObject OverlapPrefab;
     private List<GameObject> _overlapMarkers;
 
+    // Selected buildings behaviors
+    public BuildingController SelectedBuilding;
+
+    public GameObject BuildingInterface;
+    public GameObject BarracksInterface;
+    public GameObject FactoryInterface;
+    public GameObject StarportInterface;
+    public GameObject EmptyInterface;
+
+    private GameObject _activeInterface;
+
+    public PlayerManager PlayerManager;
+
+
     private void Start()
     {
         Grid.Init();
         GridWrapper = new InfrastructureGridWrapper(Grid);
 
-        _overlapMarkers = new List<GameObject>();
+        PlayerManager = GameObject.FindGameObjectWithTag(Util.Tags.PlayerManager).GetComponent<PlayerManager>();
 
+        _overlapMarkers = new List<GameObject>();
         FloatingBuildings = new HashSet<BuildingController>();
+
+        _activeInterface = BuildingInterface;
     }
 
     private void EnterNone()
     {
+        _activeInterface.SetActive(false);
+        _activeInterface = BuildingInterface;
+        _activeInterface.SetActive(true);
 
+        ChangeSelectedBuilding(null);
     }
 
     private BuildingPreview PreviewSprite(Infrastructure.BuildingType buildingType)
@@ -351,9 +372,187 @@ public class InfrastructureManager : MonoBehaviour
         }
     }
 
+    private void ProcessNone()
+    {
+        if (Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            var mousePosition = Camera.main.ScreenToWorldPoint(Mouse.current.position.ReadValue());
+            var overlap = Physics2D.OverlapPoint(mousePosition, LayerMask.GetMask(Util.Layers.BuildingLayer));
+
+            if (overlap != null)
+            {
+                var building = overlap.GetComponent<BuildingController>();
+                EnterSelectedBuilding(building);
+            }
+        }
+    }
+
+    private void ProcessSelectedBuilding()
+    {
+        if (Mouse.current.leftButton.wasPressedThisFrame
+                && !EventSystem.current.IsPointerOverGameObject())
+        {
+            var mousePosition = Camera.main.ScreenToWorldPoint(Mouse.current.position.ReadValue());
+            var overlap = Physics2D.OverlapPoint(mousePosition, LayerMask.GetMask(Util.Layers.BuildingLayer));
+
+            if (overlap != null)
+            {
+                var building = overlap.GetComponent<BuildingController>();
+                EnterSelectedBuilding(building);
+            }
+            else
+            {
+                EnterNone();
+            }
+        }
+    }
+
+    private UnitCosts GetUnitCosts(UnitType unitType)
+    {
+        switch (unitType)
+        {
+            case UnitType.Marine:
+                return new UnitCosts()
+                {
+                    BuildCapacity = 1,
+                    Mineral = 50,
+                    Gas = 0,
+                    Supply = 1
+                };
+            case UnitType.Ghost:
+                return new UnitCosts()
+                {
+                    BuildCapacity = 1,
+                    Mineral = 150,
+                    Gas = 150,
+                    Supply = 5
+                };
+            case UnitType.BattleCruiser:
+                return new UnitCosts()
+                {
+                    BuildCapacity = 1,
+                    Mineral = 300,
+                    Gas = 300,
+                    Supply = 5
+                };
+            case UnitType.Hellion:
+                return new UnitCosts()
+                {
+                    BuildCapacity = 1,
+                    Mineral = 100,
+                    Gas = 50,
+                    Supply = 2
+                };
+            case UnitType.Marauder:
+                return new UnitCosts()
+                {
+                    BuildCapacity = 1,
+                    Mineral = 50,
+                    Gas = 50,
+                    Supply = 2
+                };
+            case UnitType.Medivac:
+                return new UnitCosts()
+                {
+                    BuildCapacity = 1,
+                    Mineral = 50,
+                    Gas = 50,
+                    Supply = 1
+                };
+            case UnitType.Reaper:
+                return new UnitCosts()
+                {
+                    BuildCapacity = 1,
+                    Mineral = 50,
+                    Gas = 50,
+                    Supply = 1
+                };
+            case UnitType.SiegeTank:
+                return new UnitCosts()
+                {
+                    BuildCapacity = 1,
+                    Mineral = 150,
+                    Gas = 150,
+                    Supply = 3
+                };
+            default:
+                return new UnitCosts();
+        }
+    }
+
+    public void CreateUnit(UnitType unitType)
+    {
+        // Spend build
+        var costs = GetUnitCosts(unitType);
+        if (CanMakeUnit(costs))
+        {
+            SelectedBuilding.RemainingBuildCapacity -= costs.BuildCapacity;
+            PlayerManager.MineralCount -= costs.Mineral;
+            PlayerManager.GasCount -= costs.Gas;
+            PlayerManager.RemainingSupply -= costs.Supply;
+
+            PlayerManager.AddUnit(unitType, 1);
+            PlayerManager.UpdateText();
+            SelectedBuilding.UpdateVisuals();
+        }
+    }
+
+    private bool CanMakeUnit(UnitCosts cost)
+    {
+        return SelectedBuilding != null
+            && SelectedBuilding.RemainingBuildCapacity >= cost.BuildCapacity
+            && PlayerManager.MineralCount >= cost.Mineral
+            && PlayerManager.GasCount >= cost.Gas
+            && PlayerManager.RemainingSupply >= cost.Supply;
+    }
+
+    public void ChangeSelectedBuilding(BuildingController building)
+    {
+        if (SelectedBuilding != null)
+        {
+            SelectedBuilding.Deselect();
+        }
+
+        if (building != null)
+        {
+            SelectedBuilding = building;
+            SelectedBuilding.Select();
+        }
+    }
+
+    private void EnterSelectedBuilding(BuildingController building)
+    {
+        ChangeSelectedBuilding(building);
+        InputState = Infrastructure.InputState.SelectedBuilding;
+
+        _activeInterface.gameObject.SetActive(false);
+
+        switch (SelectedBuilding.BuildingType)
+        {
+            case Infrastructure.BuildingType.Barracks:
+                _activeInterface = BarracksInterface;
+                break;
+            case Infrastructure.BuildingType.Factory:
+                _activeInterface = FactoryInterface;
+                break;
+            case Infrastructure.BuildingType.Starport:
+                _activeInterface = StarportInterface;
+                break;
+            default:
+                _activeInterface = EmptyInterface;
+                break;
+        }
+
+        _activeInterface.gameObject.SetActive(true);
+    }
+
     private void Update()
     {
-        if (InputState == Infrastructure.InputState.PlaceBuilding)
+        if (InputState == Infrastructure.InputState.None)
+        {
+            ProcessNone();
+        }
+        else if (InputState == Infrastructure.InputState.PlaceBuilding)
         {
             ProcessPlaceBuilding();
         }
@@ -361,11 +560,15 @@ public class InfrastructureManager : MonoBehaviour
         {
             ProcessPlaceFloatingBuilding();
         }
+        else if (InputState == Infrastructure.InputState.SelectedBuilding)
+        {
+            ProcessSelectedBuilding();
+        }
     }
 
     private void OnDrawGizmos()
     {
-        if (GridWrapper != null)
+        /* if (GridWrapper != null)
         {
             for (int row = 0; row < Grid.Rows; row++)
             {
@@ -385,6 +588,14 @@ public class InfrastructureManager : MonoBehaviour
                     Gizmos.DrawWireCube(cellPosition, new Vector3(Grid.CellSize, Grid.CellSize, 0));
                 }
             }
-        }
+        } */
     }
+}
+
+public struct UnitCosts
+{
+    public int Mineral;
+    public int Gas;
+    public int BuildCapacity;
+    public int Supply;
 }

@@ -754,6 +754,7 @@ public static class Util
     {
         public static string PlayerUnit = "PlayerUnit";
         public static string InfrastructureManager = "InfrastructureManager";
+        public static string PlayerManager = "PlayerManager";
     }
 
     public static void DrawBox(Vector3 pos, Quaternion rot, Vector3 scale, Color c, float duration)

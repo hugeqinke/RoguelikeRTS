@@ -6,6 +6,7 @@ TagManager:
   tags:
   - PlayerUnit
   - InfrastructureManager
+  - PlayerManager
   layers:
   - Default
   - TransparentFX
