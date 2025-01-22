@@ -46,7 +46,6 @@ public class Simulator : MonoBehaviour
     public bool DBGForward;
     public bool DBGAttack;
 
-
     private void Awake()
     {
         Instance = this;

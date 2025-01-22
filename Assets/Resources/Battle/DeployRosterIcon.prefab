@@ -107,9 +107,9 @@ GameObject:
   - component: {fileID: 4467161199939998007}
   - component: {fileID: 2562549352898877531}
   - component: {fileID: 8294919643539850058}
-  - component: {fileID: 4222974937057018799}
+  - component: {fileID: -7906970176293532706}
   m_Layer: 5
-  m_Name: UnitIcon
+  m_Name: DeployRosterIcon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -182,7 +182,7 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
---- !u!114 &4222974937057018799
+--- !u!114 &-7906970176293532706
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -191,15 +191,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1781442374712737155}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 38d2a03229ef95847afe3ceab8ace40b, type: 3}
+  m_Script: {fileID: 11500000, guid: ac0e4e46e1008df4388e00ef2b52b709, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UnitType: 0
-  Icon: {fileID: 3614142164720235431}
-  HealthBarSlider: {fileID: 2023956708966714739}
-  NameTxt: {fileID: 2575410005206354729}
-  HealthTxt: {fileID: 3712968962660341500}
-  Kills: {fileID: 657771581755894619}
 --- !u!1 &3046770191007154559
 GameObject:
   m_ObjectHideFlags: 0
@@ -306,7 +300,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 1
   m_WholeNumbers: 1
-  m_Value: 0
+  m_Value: 1
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []

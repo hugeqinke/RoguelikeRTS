@@ -6800,8 +6800,8 @@ MonoBehaviour:
     Grid:
       Cell: {fileID: 5053063925742171313, guid: 091efaf37f073ce4a8171e6865b3d0ad, type: 3}
       Center: {fileID: 1995797694}
-      Rows: 8
-      Columns: 8
+      Rows: 9
+      Columns: 9
       CellSize: 0
 --- !u!1 &2006132999
 GameObject:
@@ -7415,12 +7415,12 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1864743374}
-  - {fileID: 1995797694}
   - {fileID: 79581163}
   - {fileID: 344367146}
   - {fileID: 957603591}
   - {fileID: 627260843}
   - {fileID: 1530654977}
   - {fileID: 1072962819}
+  - {fileID: 1995797694}
   - {fileID: 1823339341}
   - {fileID: 359055270}

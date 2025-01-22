@@ -377,7 +377,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2751052676785604356}
   - component: {fileID: 4086103115982564691}
-  - component: {fileID: 5492515113754354241}
   - component: {fileID: 2912008629903840064}
   m_Layer: 6
   m_Name: PlayerUnit
@@ -447,6 +446,7 @@ MonoBehaviour:
     Acceleration: 0
     TimeHorizon: 0
     Resolved: 0
+    ResolvedCombat: 0
     HoldingPosition: 0
     SidePreference: 0
     LastMoveTime: 0
@@ -464,6 +464,11 @@ MonoBehaviour:
     Damage: 0
     LastAttackTime: 0
     AttackAnimationLength: 0
+    AttackMoveResolved: 0
+    AttackMoveDestination:
+      x: 0
+      y: 0
+      z: 0
     Mass: 0
     Velocity:
       x: 0
@@ -497,18 +502,6 @@ MonoBehaviour:
     CurrentGroup: 0
     DBG: 0
   DBG: 0
---- !u!114 &5492515113754354241
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7968024303189016854}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3a76f63115486f346bc0385a8bb229df, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!135 &2912008629903840064
 SphereCollider:
   m_ObjectHideFlags: 0
